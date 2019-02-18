@@ -54,6 +54,8 @@ test_multiple_tiles = np.vectorize(test_single_tile, signature="(m,n),(o,o),(2)-
 
 class tetris_batch():
 
+    vectorized_rotate = np.vectorize(np.rot90, signature="(m,m),k->(m,m)")
+
     def __init__(self, batch_size, rows=20, cols=10, drop_every=5):
         self.batch_size = batch_size
         self.rows = rows
@@ -62,17 +64,23 @@ class tetris_batch():
         self.tiles = np.random.choice(tiles, batch_size, True)
         self.positions = np.array([[0,0] for _ in range(batch_size)])
         self.drop_every = drop_every
+        self.current_move = 0
 
     # 0 -> move left
     # 1 -> move right
     # 2 -> rotate clockwise
     # 3 -> rotate counterclockwise
     # 4 -> do nothing
-    def make_moves(moves):
-        self.positions[move == 0] += [0,-1]
-        self.positions[move == 1] += [0, 1]
-        
+    def make_moves(self, moves):
+        self.positions[moves == 0] += [0,-1]
+        self.positions[moves == 1] += [0, 1]
+        vectorized_rotate(self.tiles[moves == 2], 1)
+        vectorized_rotate(self.tiles[moves == 3], -1)
+        self.current_move += 1
 
+        is_not_okay = test_multiple_tiles(self.boards, self.tiles, self.positions)
+
+    def get_boards()
 
 board = np.zeros((4,4), dtype=np.int32)
 board[0,2] = 1
