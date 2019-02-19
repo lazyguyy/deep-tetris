@@ -74,7 +74,7 @@ class tetris_batch:
         # current tile for each board
         self.tiles = np.random.choice(len(tiles), batch_size, True)
         # current position of each tile for each board
-        self.positions = np.array([[0, 0] for _ in range(batch_size)])
+        self.positions = np.zeros((batch_size, 2), dtype=np.int32)
         # current rotation of each tile for each board
         self.rotations = np.zeros(batch_size, dtype=np.int32)
         # after how many moves the tile drops
@@ -116,14 +116,10 @@ class tetris_batch:
             # spawn new tiles for all that have dropped
             new_tiles = sum(is_not_okay)
             self.tiles[is_not_okay] = np.random.choice(len(tiles), new_tiles, True)
-            self.positions[is_not_okay] = np.zeros((new_tiles, 2))
-            self.rotations[is_not_okay] = np.zeros(new_tiles)
+            self.positions[is_not_okay] = np.zeros((new_tiles, 2), dtype=np.int32)
+            self.rotations[is_not_okay] = np.zeros(new_tiles, dtype=np.int32)
 
         vectorized_clear(self.views)
-
-
-
-
 
 batch = tetris_batch(10)
 
