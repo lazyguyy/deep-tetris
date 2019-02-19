@@ -3,68 +3,88 @@ import numpy as np
 tiles = [
     # ##
     # ##
-    np.asmatrix([[1, 1],
-                 [1, 1]],
-                dtype=np.int32),
+    [[1, 1],
+     [1, 1]],
     #  # 
     # ###
-    np.asmatrix([[0, 1, 0],
-                 [1, 1, 1],
-                 [0, 0, 0]],
-                dtype=np.int32),
+    [[0, 1, 0],
+     [1, 1, 1],
+     [0, 0, 0]],
     #  ##
     # ##
-    np.asmatrix([[0, 1, 1],
-                 [1, 1, 0],
-                 [0, 0, 0]],
-                dtype=np.int32),
+    [[0, 1, 1],
+     [1, 1, 0],
+     [0, 0, 0]],
     # ##
     #  ##
-    np.asmatrix([[1, 1, 0],
-                 [0, 1, 1],
-                 [0, 0, 0]],
-                dtype=np.int32),
+    [[1, 1, 0],
+     [0, 1, 1],
+     [0, 0, 0]],
     # #
     # ###
-    np.asmatrix([[1, 0, 0],
-                 [1, 1, 1],
-                 [0, 0, 0]],
-                dtype=np.int32),
+    [[1, 0, 0],
+     [1, 1, 1],
+     [0, 0, 0]],
     #   #
     # ###
-    np.asmatrix([[0, 0, 1],
-                 [1, 1, 1],
-                 [0, 0, 0]],
-                dtype=np.int32),
+    [[0, 0, 1],
+     [1, 1, 1],
+     [0, 0, 0]],
     # ####
-    np.asmatrix([[1, 1, 1, 1],
-                 [0, 0, 0, 0],
-                 [0, 0, 0, 0],
-                 [0, 0, 0, 0]],
-                dtype=np.int32)
+    [[0, 0, 0, 0],
+     [1, 1, 1, 1],
+     [0, 0, 0, 0],
+     [0, 0, 0, 0]]
     ]
 
+def generate_all_rotations(tile):
+    matrix = np.asmatrix(tile, dtype=np.int32)
+    return matrix, np.rot90(matrix), np.rot90(matrix, 2), np.rot90(matrix, -1)
+
+tiles = np.array([generate_all_rotations(tile) for tile in tiles])
+
 def test_single_tile(board, tile, position):
-    print(board)
-    print(tile)
-    print(position)
-    return np.any(np.logical_and(board[position[0]:position[0] + len(tile[0]), position[1]:position[1] + len(tile)], tile))
+    x, y = position[0] + 1, position[1] + 1
+    return np.any(np.logical_and(board[x:x + len(tile), y:y + len(tile)], tile))
 
 test_multiple_tiles = np.vectorize(test_single_tile, signature="(m,n),(o,o),(2)->()")
 
-class tetris_batch():
+def clear_single_board(board):
+    delete = np.apply_along_axis(np.all, 1, board)
+    lines = np.sum(delete)
+    board[-lines:] = board[np.logical_not(delete)]
+    board[:-lines] = np.zeros(board[:-lines].shape)
 
-    vectorized_rotate = np.vectorize(np.rot90, signature="(m,m),k->(m,m)")
+vectorized_clear = np.vectorize(clear_single_board, signature="(m,n)->()")
+
+def spawn_new_tile():
+    return np.random.choice(tiles), [0, 0]
+
+class tetris_batch():
 
     def __init__(self, batch_size, rows=20, cols=10, drop_every=5):
         self.batch_size = batch_size
+        # dimensions of the tetris grid
         self.rows = rows
         self.cols = cols
-        self.boards = np.array([np.zeros((rows, cols), dtype=np.int32) for _ in range(batch_size)])
-        self.tiles = np.random.choice(tiles, batch_size, True)
+        # state of all boards
+        self.boards = np.array([np.zeros((rows, cols + 2), dtype=np.int32) for _ in range(batch_size)])
+        for board in self.boards:
+            board[:,0] = np.ones(rows)
+            board[:,cols + 1] = np.ones(rows)
+        # views so the walls are hidden
+        self.views = np.array([board[:,1:-1] for board in self.boards])
+        # current tile for each board
+        self.tiles = np.random.choice(len(tiles), batch_size, True)
+        # current position of each tile for each board
         self.positions = np.array([[0,0] for _ in range(batch_size)])
+        # current rotation of each tile for each board
+        self.rotations = np.zeros(batch_size, dtype=np.int32)
+        # after how many moves the tile drops
         self.drop_every = drop_every
         self.current_move = 0
+
+
 
     # 0 -> move left
     # 1 -> move right
@@ -74,18 +94,13 @@ class tetris_batch():
     def make_moves(self, moves):
         self.positions[moves == 0] += [0,-1]
         self.positions[moves == 1] += [0, 1]
-        vectorized_rotate(self.tiles[moves == 2], 1)
-        vectorized_rotate(self.tiles[moves == 3], -1)
+        self.rotations[moves == 2] += -1
+        self.rotations[moves == 3] +=  1
         self.current_move += 1
 
-        is_not_okay = test_multiple_tiles(self.boards, self.tiles, self.positions)
+        is_not_okay = test_multiple_tiles(self.boards, tiles[self.tiles, self.rotations % 4], self.positions)
 
-    def get_boards()
 
-board = np.zeros((4,4), dtype=np.int32)
-board[0,2] = 1
-boards = [board, board]
+batch = tetris_batch(10)
 
-ts = [tiles[1], tiles[2]]
-
-ps = [[0, 0], [0, 0]]
+board = np.array([[1, 0, 0], [1, 1, 1], [0, 0, 1], [1, 1, 1]])
