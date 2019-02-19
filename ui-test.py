@@ -1,9 +1,13 @@
+import os
+os.environ["KIVY_NO_CONSOLELOG"] = "1"
+
 import kivy
 kivy.require('1.10.1')
 
 from kivy.app import App
-from kivy.uix.anchorlayout import AnchorLayout
+from kivy.core.window import Window
 from kivy.graphics import *
+from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.widget import Widget
 
 class FixedRatioLayout(AnchorLayout):
@@ -28,15 +32,18 @@ class TetrisGame(Widget):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         with self.canvas:
+            Color(1, 1, 1, 1)
             Rectangle(size=(50, 50))
 
 
 class MyApp(App):
     def build(self):
+        self.title = "Tetris"
         layout = FixedRatioLayout()
         layout.add_widget(TetrisGame())
         return layout
 
 
 if __name__ == '__main__':
+    # Window.fullscreen = 'auto'
     MyApp().run()
