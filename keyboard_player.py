@@ -1,3 +1,4 @@
+import asyncio
 import logic.tetris as tetris
 import numpy as np
 

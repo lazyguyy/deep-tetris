@@ -105,9 +105,8 @@ class tetris_batch:
         self.positions = np.zeros((batch_size, 2), dtype=np.int32)
         # current rotation of eachs board tile 
         self.rotations = np.zeros(batch_size, dtype=np.int32)
-        # after how many moves the tile drops
-        self.drop_every = drop_every
-        self.current_move = 0
+        # game state
+        self.lost = np.zeros(batch_size, dtype=np.bool)
 
 
 
@@ -132,38 +131,36 @@ class tetris_batch:
         self.positions = np.where(is_not_okay, self.positions, positions)
         self.rotations = np.where(is_not_okay, self.rotations, rotations)
 
-        lost = np.zeros(self.batch_size, dtype=np.bool)
 
-        # move all tiles down
-        if self.current_move % self.drop_every == 0:
-            positions = np.copy(self.positions) + [1, 0]
 
-            is_not_okay = test_multiple_tiles(self.boards, TILES[self.tiles, self.rotations % 4], positions)
+    def advance():
+        positions = np.copy(self.positions) + [1, 0]
 
-            self.positions = np.where(is_not_okay, self.positions, positions)
+        is_not_okay = test_multiple_tiles(self.boards, TILES[self.tiles, self.rotations % 4], positions)
 
-            if any(is_not_okay):
+        self.positions = np.where(is_not_okay, self.positions, positions)
 
-                # fix all tiles that dropped
-                self.boards = put_tiles_in_boards(self.boards[is_not_okay],
-                                TILES[self.tiles[is_not_okay], self.rotations[is_not_okay] % 4],
-                                self.positions[is_not_okay])
+        if any(is_not_okay):
 
-                # spawn new tiles for each tile that dropped
-                new_tiles = sum(is_not_okay)
-                self.tiles[is_not_okay] = np.random.choice(len(TILES), new_tiles, True)
-                self.positions[is_not_okay] = np.zeros((new_tiles, 2), dtype=np.int32)
-                self.rotations[is_not_okay] = np.zeros(new_tiles, dtype=np.int32)
+            # fix all tiles that dropped
+            self.boards = put_tiles_in_boards(self.boards[is_not_okay],
+                            TILES[self.tiles[is_not_okay], self.rotations[is_not_okay] % 4],
+                            self.positions[is_not_okay])
 
-                lost[is_not_okay] = test_multiple_tiles(self.boards[is_not_okay],
-                                        TILES[self.tiles[is_not_okay], self.rotations[is_not_okay] % 4],
-                                        self.positions[is_not_okay])
+            # spawn new tiles for each tile that dropped
+            new_tiles = sum(is_not_okay)
+            self.tiles[is_not_okay] = np.random.choice(len(TILES), new_tiles, True)
+            self.positions[is_not_okay] = np.zeros((new_tiles, 2), dtype=np.int32)
+            self.rotations[is_not_okay] = np.zeros(new_tiles, dtype=np.int32)
 
-                if np.any(lost):
-                    self.boards[lost] = np.zeros((sum(lost), self.rows, self.cols))
+            lost = np.zeros(batch_size, dtype=np.bool)
+            lost[is_not_okay] = test_multiple_tiles(self.boards[is_not_okay],
+                                    TILES[self.tiles[is_not_okay], self.rotations[is_not_okay] % 4],
+                                    self.positions[is_not_okay])
+            if any(lost):
+                self.boards[lost] = np.zeros((batchsize, self.rows, self.cols), dtype=np.int32)
 
         return clear_multiple_boards(self.boards), lost
-
 
     def get_boards(self):
         boards = np.copy(self.boards)
