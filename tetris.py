@@ -78,9 +78,9 @@ def single_board_heights(board):
 multiple_board_heights = lambda boards: np.apply_along_axis(single_board_heights, 1, boards)
 
 def drop_single_tile(tile, heights, position):
-    print(position)
+    # print(position)
     x, y, l = position[0], position[1], len(tile)
-    print(heights[y:y + l])
+    # print(heights[y:y + l])
     # print(single_board_heights(tile[::-1]))
     return min(heights[y:y + l] - (x + (l - single_board_heights(tile[::-1]))))
 
@@ -111,8 +111,6 @@ class tetris_batch:
         self.positions = np.zeros((batch_size, 2), dtype=np.int32) + [0, self.offset]
         # current rotation of eachs board tile
         self.rotations = np.zeros(batch_size, dtype=np.int32)
-        # game state
-        self.lost = np.zeros(batch_size, dtype=np.bool)
 
 
 
@@ -130,30 +128,31 @@ class tetris_batch:
         positions[moves == tetris_batch.MOVE_RIGHT] += [0, 1]
         rotations[moves == tetris_batch.ROTATE]     += 1
 
+        # test whether they are okay and reverse if necessary
+        is_not_okay = test_multiple_tiles(self.boards, TILES[self.tiles, rotations % 4], positions)
+
+        # update position where possible
+        self.positions = np.where(np.dstack([is_not_okay, is_not_okay]), self.positions, positions).squeeze(axis=0)
+        self.rotations = np.where(is_not_okay, self.rotations, rotations)
+
         if np.any(moves == tetris_batch.DROP):
             heights = multiple_board_heights(self.boards[moves == tetris_batch.DROP])
             drop_heights = drop_multiple_tiles(
                             TILES[self.tiles[moves == tetris_batch.DROP], rotations[moves == tetris_batch.DROP] % 4],
                             heights,
                             positions[moves == tetris_batch.DROP])
-            positions[moves == tetris_batch.DROP] += np.dstack([drop_heights, np.zeros(drop_heights.shape, dtype=np.int32)]).squeeze(axis=0)
+            self.positions[moves == tetris_batch.DROP] += np.dstack([drop_heights, np.zeros(drop_heights.shape, dtype=np.int32)]).squeeze(axis=0)
             points, lost = self.respawn_tiles(moves == tetris_batch.DROP)
 
-        # test whether they are okay and reverse if necessary
-        is_not_okay = test_multiple_tiles(self.boards[...,self.offset:-self.offset], TILES[self.tiles, rotations % 4], positions)
 
         lost = np.zeros(self.batch_size, dtype=np.bool)
         points = np.zeros(self.batch_size, dtype=np.int32)
 
 
-        # update position where possible
-        self.positions = np.where(np.dstack([is_not_okay, is_not_okay]), self.positions, positions).squeeze(axis=0)
-        self.rotations = np.where(is_not_okay, self.rotations, rotations)
-        return lost
+        return points, lost
 
     # respawns new tiles and resets lost boards
     def respawn_tiles(self, players):
-
         lost = np.zeros(self.batch_size, dtype=np.bool)
         points = np.zeros(self.batch_size, dtype=np.int32)
 
@@ -170,12 +169,15 @@ class tetris_batch:
 
         points[players] = clear_multiple_boards(self.boards[players,:-self.offset, self.offset:-self.offset])
 
+        print(self.boards[players])
+
         lost[players] = test_multiple_tiles(self.boards[players],
                             TILES[self.tiles[players], self.rotations[players] % 4],
                             self.positions[players])
         prefix_sum = np.cumsum(lost)
         for i, board in enumerate(self.boards):
             if lost[i]:
+                print(f"player {i} lost the game")
                 board[:-self.offset, self.offset:-self.offset] = np.zeros((self.rows, self.cols))
         return points, lost
 
@@ -202,7 +204,7 @@ class tetris_batch:
     def get_boards(self):
         boards = np.copy(self.boards)
         put_tiles_in_boards(boards, TILES[self.tiles, self.rotations % 4], self.positions)
-        return boards[:,:-self.offset, self.offset:-self.offset]
+        return boards#[:,:-self.offset, self.offset:-self.offset]
 
     def get_heights(self):
         return multiple_board_heights(self.boards[...,self.offset:-self.offset])

@@ -24,12 +24,12 @@ def get_move():
 def main():
 
     batch_size = 1
-    board = tetris.tetris_batch(batch_size)
+    board = tetris.tetris_batch(batch_size, rows=10)
 
     while True:
 
         points, lost = np.zeros(batch_size, dtype=np.int32), [False]
-        for i in range(2):
+        for i in range(10):
             print(board.get_heights()[0])
             render_board(board.get_boards()[0])
             move = get_move()
