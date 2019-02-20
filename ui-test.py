@@ -29,33 +29,35 @@ class TetrisGame(Widget):
         self.board = B
         self.tile_margin = 1
         self.size_hint = None, None
-        self.pos_hint = None, None
+
+        with self.canvas:
+            Callback(self.update)
 
     def update_size(self):
         r, c = self.board.shape
-        ratio = c / r
-
         w, h = self.parent.size
-        if h > w * ratio:
-            w = h / ratio
+        if h / r < w / c:
+            w = h * c / r
         else:
-            h = w * ratio
-
+            h = w * r / c
         self.size = w, h
 
-    def draw(self, *args):
+    def update(self, instr):
         self.canvas.clear()
         self.update_size()
 
         tile_size = self.width / self.board.shape[0]
 
         with self.canvas:
+            Callback(self.update)
+            Color(rgb=(0, 0, 1))
+            Rectangle(pos=self.pos, size=self.size)
             for (row, column), color_id in np.ndenumerate(self.board):
                 if color_id == 0:
                     continue
                 Color(rgb=COLOR_MAP[color_id])
                 Rectangle(
-                    pos=(tile_size * column + self.tile_margin, tile_size * row + self.tile_margin),
+                    pos=(self.x + tile_size * column + self.tile_margin, self.y + tile_size * row + self.tile_margin),
                     size=(tile_size - 2 * self.tile_margin, tile_size - 2 * self.tile_margin)
                 )
 
@@ -73,7 +75,6 @@ class TetrisApp(App):
     def build(self):
         layout = AnchorLayout(anchor_x='center', anchor_y='center')
         layout.add_widget(self.game)
-        self.game.draw()
         return layout
 
 
