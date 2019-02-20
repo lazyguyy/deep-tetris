@@ -54,9 +54,10 @@ class TetrisGame(Widget):
 
         with self.canvas:
             self.callback = Callback(self.update)
-            for (row, column), color_id in np.ndenumerate(self.board):
+            for (rev_row, column), color_id in np.ndenumerate(self.board):
                 if color_id == 0:
                     continue
+                row = self.board.shape[0] - 1 - rev_row
                 Color(rgb=COLOR_MAP[color_id])
                 x = self.x + tile_size * column + self.tile_margin
                 y = self.y + tile_size * row + self.tile_margin
