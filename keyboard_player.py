@@ -1,5 +1,5 @@
 import asyncio
-import logic.tetris as tetris
+import tetris
 import numpy as np
 
 
