@@ -1,16 +1,14 @@
-import os
-# os.environ["KIVY_NO_CONSOLELOG"] = "1"
-
 import kivy
-kivy.require('1.10.1')
+import os
+import numpy as np
 
 from kivy.app import App
 from kivy.core.window import Window
 from kivy.graphics import *
-from kivy.uix.anchorlayout import AnchorLayout
+from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.widget import Widget
 
-import numpy as np
+kivy.require('1.10.1')
 
 COLOR_MAP = {
     1: (0.15, 0.27, 0.58),
@@ -31,39 +29,43 @@ class TetrisGame(Widget):
         self.size_hint = None, None
 
         with self.canvas:
-            Callback(self.update)
+            self.callback = Callback(self.update)
 
-    def update_size(self):
+    def update_size_and_position(self):
         r, c = self.board.shape
         w, h = self.parent.size
+        x, y = 0, 0
         if h / r < w / c:
-            w = h * c / r
+            new_w = h * c / r
+            x = (w - new_w) / 2
+            w = new_w
         else:
-            h = w * r / c
+            new_h = w * r / c
+            y = (h - new_h) / 2
+            h = new_h
         self.size = w, h
+        self.pos = x, y
 
-    def update(self, instr):
+    def update(self, instruction):
         self.canvas.clear()
-        self.update_size()
+        self.update_size_and_position()
 
-        tile_size = self.width / self.board.shape[0]
+        tile_size = self.height / self.board.shape[0]
 
         with self.canvas:
-            Callback(self.update)
-            Color(rgb=(0, 0, 1))
-            Rectangle(pos=self.pos, size=self.size)
+            self.callback = Callback(self.update)
             for (row, column), color_id in np.ndenumerate(self.board):
                 if color_id == 0:
                     continue
                 Color(rgb=COLOR_MAP[color_id])
-                Rectangle(
-                    pos=(self.x + tile_size * column + self.tile_margin, self.y + tile_size * row + self.tile_margin),
-                    size=(tile_size - 2 * self.tile_margin, tile_size - 2 * self.tile_margin)
-                )
+                x = self.x + tile_size * column + self.tile_margin
+                y = self.y + tile_size * row + self.tile_margin
+                size = tile_size - 2 * self.tile_margin
+                Rectangle(pos=(x, y), size=(size, size))
 
 
-B = np.zeros((20, 10))
-B[1:5, 0:2] = 1
+B = np.ones((20, 10))
+B[1:5, 0:2] = 6
 B[6:8, 1:7] = 2
 
 class TetrisApp(App):
@@ -73,11 +75,12 @@ class TetrisApp(App):
         self.game = TetrisGame()
 
     def build(self):
-        layout = AnchorLayout(anchor_x='center', anchor_y='center')
+        layout = BoxLayout()
         layout.add_widget(self.game)
         return layout
 
 
 if __name__ == '__main__':
-    # Window.fullscreen = 'auto'
+    if os.environ.get("FULLSCREEN", 1) != 0:
+        Window.fullscreen = 'auto'
     TetrisApp().run()
