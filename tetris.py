@@ -72,6 +72,11 @@ def put_tile_in_board(board, tile, position):
 
 put_tiles_in_boards = np.vectorize(put_tile_in_board, signature="(m,n),(),(2)->(m,n)")
 
+def single_board_heights(board):
+    return (board != 0).argmax(axis=0)
+
+multiple_board_heights = lambda boards: np.apply_along_axis(single_board_heights, 1, boards)
+
 class tetris_batch:
 
 
@@ -160,3 +165,6 @@ class tetris_batch:
         boards = np.copy(self.boards)
         put_tiles_in_boards(boards, TILES[self.tiles, self.rotations % 4], self.positions)
         return boards[:,:-self.offset, self.offset:-self.offset]
+
+    def get_heights(self):
+        return multiple_board_heights(self.boards[...,self.offset:-self.offset])

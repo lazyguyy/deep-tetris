@@ -30,6 +30,7 @@ def main():
 
         points, lost = np.zeros(batch_size, dtype=np.int32), [False]
         for i in range(2):
+            print(board.get_heights()[0])
             render_board(board.get_boards()[0])
             move = get_move()
             if move == 'd':
