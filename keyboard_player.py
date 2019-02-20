@@ -23,7 +23,7 @@ def get_move():
 
 def main():
 
-    batch_size = 512
+    batch_size = 1
     board = tetris.tetris_batch(batch_size)
 
     while True:
