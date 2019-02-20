@@ -5,7 +5,7 @@ BASIC_TILES = [
     # ##
     [[1, 1],
      [1, 1]],
-    #  # 
+    #  #
     # ###
     [[0, 2, 0],
      [2, 2, 2],
@@ -117,7 +117,7 @@ class tetris_batch:
     def make_moves(self, moves):
         positions = np.copy(self.positions)
         rotations = np.copy(self.rotations)
-        
+
         # make moves
         positions[moves == tetris_batch.MOVE_LEFT]  += [0, -1]
         positions[moves == tetris_batch.MOVE_RIGHT] += [0, 1]

@@ -34,7 +34,7 @@ S = tf.train.GradientDescentOptimizer(0.5).minimize(L)
 
 with tf.Session() as sess:
     sess.run(tf.global_variables_initializer())
-    num_episodes = 2 ** 15
+    num_episodes = 2 ** 13
     gamma, epsilon = 0.999, 0.1
 
     it = tqdm(range(num_episodes))
@@ -62,8 +62,8 @@ with tf.Session() as sess:
         if episode % 2 ** 8 == 0:
             it.set_description(f"{sess.run(L, feed_dict=feed_dict):0.5f}")
 
-    # num_test_games, num_won, render = 2 ** 10, 0, False
-    num_test_games, num_won, render = 1, 0, True
+    num_test_games, num_won, render = 2 ** 10, 0, False
+    # num_test_games, num_won, render = 1, 0, True
     for test_game in range(num_test_games):
         done, state = False, env.reset()
         while not done:
