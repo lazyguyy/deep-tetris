@@ -35,10 +35,10 @@ def make_loss(output_rotation, output_column, modified_rotation, modified_column
 class depths_network:
 
     def __init__(self):
-        self.depths = tf.placeholder(shape=(None, WIDTH), dtype=dtype)
-        self.tile_ids = tf.placeholder(shape=(None,), dtype=tf.int32)
-        self.modified_rotation = tf.placeholder(shape=(None,), dtype=dtype)
-        self.modified_column = tf.placeholder(shape=(None,), dtype=dtype)
+        self.depths = tf.placeholder(shape=(None, WIDTH), dtype=dtype, name="depths")
+        self.tile_ids = tf.placeholder(shape=(None,), dtype=tf.int32, name="tile_ids")
+        self.modified_rotation = tf.placeholder(shape=(None,), dtype=dtype, name="modified_rotations")
+        self.modified_column = tf.placeholder(shape=(None,), dtype=dtype, name="modified_columns")
 
         self.output_rotation, self.output_column = make_network(self.depths, self.tile_ids, activation=tf.nn.leaky_relu)
 
@@ -48,9 +48,9 @@ class depths_network:
     def train(self, num_episodes=NUM_EPISODES):
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
+
             episodes = tqdm.tqdm(range(num_episodes))
             for episode in episodes:
-
                 game = tetris.tetris_batch(BATCH_SIZE)
 
                 lost_games = 0
@@ -99,5 +99,8 @@ class depths_network:
                 self.depths: depths,
                 self.tile_ids: tile_ids
             })
+        return np.argmax(rotation_quality, axis=-1), np.argmax(column_quality, axis=-1)
 
-            return np.argmax(rotation_quality, axis=-1), np.argmax(column_quality, axis=-1)
+if __name__ == "__main__":
+    network = depths_network()
+    network.train()
