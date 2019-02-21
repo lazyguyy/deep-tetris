@@ -32,62 +32,64 @@ def make_loss(output_rotation, output_column, modified_rotation, modified_column
     return rotation_loss + column_loss
 
 
-def main():
-    depths = tf.placeholder(shape=(None, WIDTH), dtype=dtype)
-    tile_id = tf.placeholder(shape=(None,), dtype=tf.int32)
-    modified_rotation = tf.placeholder(shape=(None,), dtype=dtype)
-    modified_column = tf.placeholder(shape=(None,), dtype=dtype)
+class depths_network:
 
-    output_rotation, output_column = make_network(depths, tile_id, activation=tf.nn.leaky_relu)
+    def __init__(self):
+        self.depths = tf.placeholder(shape=(None, WIDTH), dtype=dtype)
+        self.tile_id = tf.placeholder(shape=(None,), dtype=tf.int32)
+        self.modified_rotation = tf.placeholder(shape=(None,), dtype=dtype)
+        self.modified_column = tf.placeholder(shape=(None,), dtype=dtype)
 
-    loss = make_loss(output_rotation, output_column, modified_rotation, modified_column)
-    optimizer = tf.train.GradientDescentOptimizer(0.5).minimize(loss)
+        self.output_rotation, self.output_column = make_network(self.depths, self.tile_id, activation=tf.nn.leaky_relu)
 
-    episodes = tqdm.tqdm(range(NUM_EPISODES))
-    with tf.Session() as sess:
-        sess.run(tf.global_variables_initializer())
-        for episode in episodes:
+        self.loss = make_loss(self.output_rotation, self.output_column, self.modified_rotation, self.modified_column)
+        self.optimizer = tf.train.GradientDescentOptimizer(0.5).minimize(self.loss)
 
-            game = tetris.tetris_batch(BATCH_SIZE)
+    def train(self, episodes=NUM_EPISODES):
+        with tf.Session() as sess:
+            sess.run(tf.global_variables_initializer())
+            for episode in episodes:
 
-            lost_games = 0
-            while lost_games < LOSSES_PER_EPISODE:
-                render_board(game.get_boards()[0])
-                old_depths = np.copy(game.depths)
-                old_tile_ids = np.copy(game.tiles)
-                rotation_quality, column_quality = sess.run((output_rotation, output_column), feed_dict={
-                    depths: old_depths,
-                    tile_id: old_tile_ids
-                    })
+                game = tetris.tetris_batch(BATCH_SIZE)
 
-                rot = np.argmax(rotation_quality, axis=-1)
-                col = np.argmax(column_quality, axis=-1)
+                lost_games = 0
+                while lost_games < LOSSES_PER_EPISODE:
+                    render_board(game.get_boards()[0])
+                    old_depths = np.copy(game.depths)
+                    old_tile_ids = np.copy(game.tiles)
+                    rotation_quality, column_quality = sess.run((self.output_rotation, self.output_column), feed_dict={
+                        self.depths: old_depths,
+                        self.tile_id: old_tile_ids
+                        })
 
-                if np.random.uniform(0, 1) < RANDOM_MOVE_PROBABILITY:
-                    rot = np.random.randint(4)
-                    col = np.random.randint(WIDTH)
+                    rot = np.argmax(rotation_quality, axis=-1)
+                    col = np.argmax(column_quality, axis=-1)
 
-                reward, lost = game.drop_in(col, rot)
+                    if np.random.uniform(0, 1) < RANDOM_MOVE_PROBABILITY:
+                        rot = np.random.randint(4)
+                        col = np.random.randint(WIDTH)
 
-                next_rotation_quality, next_column_quality = sess.run((output_rotation, output_column), feed_dict={
-                    depths: game.depths,
-                    tile_id: game.tiles
-                    })
+                    reward, lost = game.drop_in(col, rot)
 
-                lost_game_penalty = np.where(loss, np.zeros(BATCH_SIZE), -PENALTY_PER_LOSS * np.ones(BATCH_SIZE))
+                    next_rotation_quality, next_column_quality = sess.run((self.output_rotation, self.output_column), feed_dict={
+                        self.depths: game.depths,
+                        self.tile_id: game.tiles
+                        })
 
-                rotation_quality[:, rot] = lost_game_penatly + reward + EMA_FACTOR * np.max(next_rotation_quality)
-                column_quality[:, col] = lost_game_penalty + reward + EMA_FACTOR * np.max(next_column_quality)
+                    lost_game_penalty = np.where(self.loss, np.zeros(BATCH_SIZE), -PENALTY_PER_LOSS * np.ones(BATCH_SIZE))
 
-                sess.run(optimizer, feed_dict={
-                    modified_rotation: rotation_quality,
-                    modified_column: column_quality,
-                    depths: old_depths,
-                    tile_id: old_tile_ids
-                    })
+                    rotation_quality[:, rot] = lost_game_penatly + reward + EMA_FACTOR * np.max(next_rotation_quality)
+                    column_quality[:, col] = lost_game_penalty + reward + EMA_FACTOR * np.max(next_column_quality)
 
-                lost_games += np.sum(lost)
+                    sess.run(self.optimizer, feed_dict={
+                        self.modified_rotation: rotation_quality,
+                        self.modified_column: column_quality,
+                        self.depths: old_depths,
+                        self.tile_id: old_tile_ids
+                        })
 
+                    lost_games += np.sum(lost)
 
-if __name__ == '__main__':
-    main()
+    def next_move(self):
+        pass
+
