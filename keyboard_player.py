@@ -41,10 +41,10 @@ def main():
                 move = 2 * np.ones(batch_size, dtype=np.int32)
             elif move == 's':
                 move = 3 * np.ones(batch_size, dtype=np.int32)
-            else:#if move == '':
+            elif move == '':
                 move = 4 * np.ones(batch_size, dtype=np.int32)
-            # else:
-            #     board.drop_in(int(move[0]) * np.ones(batch_size, dtype=np.int32), int(move[1]) * np.ones(batch_size, dtype=np.int32))
+            else:
+                board.drop_in(int(move[0]) * np.ones(batch_size, dtype=np.int32), int(move[1]) * np.ones(batch_size, dtype=np.int32))
             board.make_moves(move)
             print(points[0], ["", "GAME OVER"][lost[0]])
 

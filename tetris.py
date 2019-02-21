@@ -1,41 +1,6 @@
 import numpy as np
 
-# BASIC_TILES = [
-#     # ##
-#     # ##
-#     [[1, 1],
-#      [1, 1]],
-#     #  #
-#     # ###
-#     [[0, 2, 0],
-#      [2, 2, 2],
-#      [0, 0, 0]],
-#     #  ##
-#     # ##
-#     [[0, 3, 3],
-#      [3, 3, 0],
-#      [0, 0, 0]],
-#     # ##
-#     #  ##
-#     [[4, 4, 0],
-#      [0, 4, 4],
-#      [0, 0, 0]],
-#     # #
-#     # ###
-#     [[5, 0, 0],
-#      [5, 5, 5],
-#      [0, 0, 0]],
-#     #   #
-#     # ###
-#     [[0, 0, 6],
-#      [6, 6, 6],
-#      [0, 0, 0]],
-#     # ####
-#     [[0, 0, 0, 0],
-#      [7, 7, 7, 7],
-#      [0, 0, 0, 0],
-#      [0, 0, 0, 0]]
-#     ]
+ROWS, COLUMNS = 20, 10
 
 TILES = np.array([
 [[[0,1,1,0], [0,1,1,0], [0,0,0,0], [0,0,0,0]],
@@ -121,7 +86,7 @@ class tetris_batch:
     DROP = 3
     IDLE = 4
 
-    def __init__(self, batch_size, rows=20, cols=10):
+    def __init__(self, batch_size, rows=ROWS, cols=COLUMNS):
         self.batch_size = batch_size
         # dimensions of the tetris grid
         self.rows = rows
@@ -198,7 +163,6 @@ class tetris_batch:
 
         # clear lines and give players points
         points = clear_multiple_boards(self.boards[:,:-self.offset, self.offset:-self.offset])
-        print(points.shape)
 
         # check whether players lost and restart the game if necessary
         lost[players] = test_multiple_tiles(self.boards[players],
@@ -219,7 +183,6 @@ class tetris_batch:
             moves = tetris_batch.IDLE * np.ones(self.batch_size, dtype=np.int32)
             moves[self.positions[:,1] < col] = tetris_batch.MOVE_RIGHT
             moves[self.positions[:,1] > col] = tetris_batch.MOVE_LEFT
-            print(moves)
             self.make_moves(moves)
 
 
@@ -255,9 +218,7 @@ class tetris_batch:
         put_tiles_in_boards(boards, TILES[self.tiles, self.rotations % 4], self.positions)
         return boards[:,:-self.offset, self.offset:-self.offset]
 
-    def get_heights(self):
+    @property
+    def depths(self):
         return multiple_board_heights(self.boards[...,self.offset:-self.offset])
 
-
-    def get_tile_ids(self):
-        return self.tiles
