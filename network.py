@@ -45,9 +45,10 @@ class depths_network:
         self.loss = make_loss(self.output_rotation, self.output_column, self.modified_rotation, self.modified_column)
         self.optimizer = tf.train.GradientDescentOptimizer(0.5).minimize(self.loss)
 
-    def train(self, episodes=NUM_EPISODES):
+    def train(self, num_episodes=NUM_EPISODES):
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
+            episodes = tqdm.tqdm(range(num_episodes))
             for episode in episodes:
 
                 game = tetris.tetris_batch(BATCH_SIZE)
