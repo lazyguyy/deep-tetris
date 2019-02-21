@@ -67,6 +67,7 @@ clear_multiple_boards = np.vectorize(clear_single_board, signature="(m,n)->()")
 def put_tile_in_board(board, tile, position):
     board.flags.writeable = True
     x, y, l = position[0], position[1], len(tile)
+    print(x, y, l)
     board[x:x + l, y:y + l] += tile
     return board
 
@@ -82,7 +83,8 @@ def drop_single_tile(tile, heights, position):
     x, y, l = position[0], position[1], len(tile)
     # print(heights[y:y + l])
     # print(single_board_heights(tile[::-1]))
-    return min(heights[y:y + l] - (x + (l - single_board_heights(tile[::-1]))))
+    has_tiles = np.apply_along_axis(np.any, 0, tile)
+    return min((heights[y:y + l] - (x + (l - single_board_heights(tile[::-1]))))[has_tiles])
 
 drop_multiple_tiles = np.vectorize(drop_single_tile, signature="(),(m),(2)->()")
 
@@ -204,7 +206,7 @@ class tetris_batch:
     def get_boards(self):
         boards = np.copy(self.boards)
         put_tiles_in_boards(boards, TILES[self.tiles, self.rotations % 4], self.positions)
-        return boards#[:,:-self.offset, self.offset:-self.offset]
+        return boards[:,:-self.offset, self.offset:-self.offset]
 
     def get_heights(self):
         return multiple_board_heights(self.boards[...,self.offset:-self.offset])
