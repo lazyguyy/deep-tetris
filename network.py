@@ -74,11 +74,13 @@ def main():
                     tile_id: game.tiles
                     })
 
-                lost_game_penalty = np.where(loss, np.zeros(BATCH_SIZE), -PENALTY_PER_LOSS * np.ones(BATCH_SIZE))
 
-                rotation_quality[:, rot] = lost_game_penatly + reward + EMA_FACTOR * np.max(next_rotation_quality)
+                lost_game_penalty = np.where(lost, np.zeros(BATCH_SIZE), -PENALTY_PER_LOSS * np.ones(BATCH_SIZE))
+
+                rotation_quality[:, rot] = lost_game_penalty + reward + EMA_FACTOR * np.max(next_rotation_quality)
                 column_quality[:, col] = lost_game_penalty + reward + EMA_FACTOR * np.max(next_column_quality)
 
+                print(old_tile_ids)
                 sess.run(optimizer, feed_dict={
                     modified_rotation: rotation_quality,
                     modified_column: column_quality,
