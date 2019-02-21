@@ -35,10 +35,10 @@ def make_loss(output_rotation, output_column, modified_rotation, modified_column
 class depths_network:
 
     def __init__(self):
-        self.depths = tf.placeholder(shape=(None, WIDTH), dtype=dtype)
-        self.tile_id = tf.placeholder(shape=(None,), dtype=tf.int32)
-        self.modified_rotation = tf.placeholder(shape=(None,), dtype=dtype)
-        self.modified_column = tf.placeholder(shape=(None,), dtype=dtype)
+        self.depths = tf.placeholder(shape=(None, WIDTH), dtype=dtype, name="depths")
+        self.tile_id = tf.placeholder(shape=(None,), dtype=tf.int32, name="tile_ids")
+        self.modified_rotation = tf.placeholder(shape=(None,), dtype=dtype, name="modified_rotations")
+        self.modified_column = tf.placeholder(shape=(None,), dtype=dtype, name="modified_columns")
 
         self.output_rotation, self.output_column = make_network(self.depths, self.tile_id, activation=tf.nn.leaky_relu)
 
@@ -48,7 +48,7 @@ class depths_network:
     def train(self, episodes=NUM_EPISODES):
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
-            for episode in episodes:
+            for episode in range(episodes):
 
                 game = tetris.tetris_batch(BATCH_SIZE)
 
@@ -93,3 +93,6 @@ class depths_network:
     def next_move(self):
         pass
 
+if __name__ == "__main__":
+    network = depths_network()
+    network.train()
