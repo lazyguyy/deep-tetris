@@ -36,11 +36,11 @@ class depths_network:
 
     def __init__(self):
         self.depths = tf.placeholder(shape=(None, WIDTH), dtype=dtype)
-        self.tile_id = tf.placeholder(shape=(None,), dtype=tf.int32)
+        self.tile_ids = tf.placeholder(shape=(None,), dtype=tf.int32)
         self.modified_rotation = tf.placeholder(shape=(None,), dtype=dtype)
         self.modified_column = tf.placeholder(shape=(None,), dtype=dtype)
 
-        self.output_rotation, self.output_column = make_network(self.depths, self.tile_id, activation=tf.nn.leaky_relu)
+        self.output_rotation, self.output_column = make_network(self.depths, self.tile_ids, activation=tf.nn.leaky_relu)
 
         self.loss = make_loss(self.output_rotation, self.output_column, self.modified_rotation, self.modified_column)
         self.optimizer = tf.train.GradientDescentOptimizer(0.5).minimize(self.loss)
@@ -59,7 +59,7 @@ class depths_network:
                     old_tile_ids = np.copy(game.tiles)
                     rotation_quality, column_quality = sess.run((self.output_rotation, self.output_column), feed_dict={
                         self.depths: old_depths,
-                        self.tile_id: old_tile_ids
+                        self.tile_ids: old_tile_ids
                         })
 
                     rot = np.argmax(rotation_quality, axis=-1)
@@ -73,7 +73,7 @@ class depths_network:
 
                     next_rotation_quality, next_column_quality = sess.run((self.output_rotation, self.output_column), feed_dict={
                         self.depths: game.depths,
-                        self.tile_id: game.tiles
+                        self.tile_ids: game.tiles
                         })
 
                     lost_game_penalty = np.where(lost, np.zeros(BATCH_SIZE), -PENALTY_PER_LOSS * np.ones(BATCH_SIZE))
@@ -85,11 +85,18 @@ class depths_network:
                         self.modified_rotation: rotation_quality,
                         self.modified_column: column_quality,
                         self.depths: old_depths,
-                        self.tile_id: old_tile_ids
+                        self.tile_ids: old_tile_ids
                         })
 
                     lost_games += np.sum(lost)
 
-    def next_move(self):
-        pass
+    def next_move(self, depths, tile_ids):
+        with tf.Session() as sess:
+            sess.run(tf.global_variables_initializer())
 
+            rotation_quality, column_quality = sess.run((self.output_rotation, self.output_column), feed_dict={
+                self.depths: depths,
+                self.tile_ids: tile_ids
+            })
+
+            return np.argmax(rotation_quality, axis=-1), np.argmax(column_quality, axis=-1)
