@@ -18,29 +18,33 @@ def get_move():
         move = input("ENTER MOVE W/A/S/D:").lower()
         if move in 'wasd' or not move:
             return move
-        print("Illegal move!")
+        parts = move.split(" ")
+        return parts
 
 
 def main():
 
     batch_size = 1
-    board = tetris.tetris_batch(batch_size, rows=10)
+    board = tetris.tetris_batch(batch_size, rows=20)
 
     while True:
 
         points, lost = np.zeros(batch_size, dtype=np.int32), [False]
         for i in range(10):
-            # print(board.get_heights()[0])
             render_board(board.get_boards()[0])
             move = get_move()
             if move == 'd':
-                move = 1 * np.ones(batch_size)
+                move = 1 * np.ones(batch_size, dtype=np.int32)
             elif move == 'a':
-                move = 0 * np.ones(batch_size)
+                move = 0 * np.ones(batch_size, dtype=np.int32)
             elif move == 'w':
-                move = 2 * np.ones(batch_size)
-            else:
-                move = 3 * np.ones(batch_size)
+                move = 2 * np.ones(batch_size, dtype=np.int32)
+            elif move == 's':
+                move = 3 * np.ones(batch_size, dtype=np.int32)
+            else:#if move == '':
+                move = 4 * np.ones(batch_size, dtype=np.int32)
+            # else:
+            #     board.drop_in(int(move[0]) * np.ones(batch_size, dtype=np.int32), int(move[1]) * np.ones(batch_size, dtype=np.int32))
             board.make_moves(move)
             print(points[0], ["", "GAME OVER"][lost[0]])
 
