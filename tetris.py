@@ -74,9 +74,6 @@ TILES = np.array([
  [[0,0,7,0], [0,0,7,0], [0,0,7,0], [0,0,7,0]]]
 ], dtype=np.int32)
 
-def in_bounds(x, y, board):
-    return 0 <= x < len(board) and 0 <= y < len(board[0])
-
 def test_single_tile(board, tile, position):
     x, y, l = position[0], position[1], len(tile)
     return np.any(np.logical_and(tile, board[x:x + l, y:y + l]))
@@ -85,14 +82,13 @@ test_multiple_tiles = np.vectorize(test_single_tile, signature="(m,n),(o,o),(2)-
 
 def clear_single_board(board):
     board.flags.writeable = True
-    delete = np.logical_not(np.apply_along_axis(np.all, 1, board))
-    print(delete)
-    lines = np.sum(delete)
+    to_delete = np.logical_not(np.apply_along_axis(np.all, 1, board))
+    lines = np.sum(to_delete)
     if lines == 0:
         return 0
-    board[-lines:] = board[delete]
+    board[-lines:] = board[to_delete]
     board[:-lines] = np.zeros(board[:-lines].shape)
-    return (len(board) - lines)**2
+    return (len(board) - lines) ** 2
 
 clear_multiple_boards = np.vectorize(clear_single_board, signature="(m,n)->()")
 
@@ -155,7 +151,7 @@ class tetris_batch:
 
         # make moves
         positions[moves == tetris_batch.MOVE_LEFT]  += [0, -1]
-        positions[moves == tetris_batch.MOVE_RIGHT] += [0, 1]
+        positions[moves == tetris_batch.MOVE_RIGHT] += [0,  1]
         rotations[moves == tetris_batch.ROTATE]     += 1
 
         # test whether they are okay and reverse if necessary
@@ -201,7 +197,8 @@ class tetris_batch:
         self.rotations[players] = np.zeros(new_tiles, dtype=np.int32)
 
         # clear lines and give players points
-        points[players] = clear_multiple_boards(self.boards[players,:-self.offset, self.offset:-self.offset])
+        points = clear_multiple_boards(self.boards[:,:-self.offset, self.offset:-self.offset])
+        print(points.shape)
 
         # check whether players lost and restart the game if necessary
         lost[players] = test_multiple_tiles(self.boards[players],
