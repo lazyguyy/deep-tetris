@@ -8,7 +8,7 @@ from keyboard_player import render_board
 
 NUM_TILES = len(tetris.TILES)
 NUM_EPISODES = 2**5
-BATCH_SIZE = 2**5
+BATCH_SIZE = 2**2
 LOSSES_PER_EPISODE = 2 * BATCH_SIZE
 PENALTY_PER_LOSS = 1
 WIDTH, HEIGHT = 10, 20
@@ -37,8 +37,8 @@ class depths_network:
     def __init__(self):
         self.depths = tf.placeholder(shape=(None, WIDTH), dtype=dtype, name="depths")
         self.tile_ids = tf.placeholder(shape=(None,), dtype=tf.int32, name="tile_ids")
-        self.modified_rotation = tf.placeholder(shape=(None,), dtype=dtype, name="modified_rotations")
-        self.modified_column = tf.placeholder(shape=(None,), dtype=dtype, name="modified_columns")
+        self.modified_rotation = tf.placeholder(shape=(None, 4), dtype=dtype, name="modified_rotations")
+        self.modified_column = tf.placeholder(shape=(None, WIDTH), dtype=dtype, name="modified_columns")
 
         self.output_rotation, self.output_column = make_network(self.depths, self.tile_ids, activation=tf.nn.leaky_relu)
 
@@ -65,9 +65,9 @@ class depths_network:
                     rot = np.argmax(rotation_quality, axis=-1)
                     col = np.argmax(column_quality, axis=-1)
 
-                    if np.random.uniform(0, 1) < RANDOM_MOVE_PROBABILITY:
-                        rot = np.random.randint(4)
-                        col = np.random.randint(WIDTH)
+                    # if np.random.uniform(0, 1) < RANDOM_MOVE_PROBABILITY:
+                    #     rot = np.random.choice(4, BATCH_SIZE, True)
+                    #     col = np.random.choice(WIDTH, BATCH_SIZE, True)
 
                     reward, lost = game.drop_in(col, rot)
 
@@ -78,8 +78,12 @@ class depths_network:
 
                     lost_game_penalty = np.where(lost, np.zeros(BATCH_SIZE), -PENALTY_PER_LOSS * np.ones(BATCH_SIZE))
 
-                    rotation_quality[:, rot] = lost_game_penalty + reward + EMA_FACTOR * np.max(next_rotation_quality)
-                    column_quality[:, col] = lost_game_penalty + reward + EMA_FACTOR * np.max(next_column_quality)
+                    rotation_quality[:, rot] = lost_game_penalty + reward + EMA_FACTOR * np.max(next_rotation_quality, axis=-1)
+                    print(col)
+                    print(column_quality)
+                    print(column_quality.shape)
+                    print(column_quality[:, col].shape)
+                    column_quality[:, col] = lost_game_penalty + reward + EMA_FACTOR * np.max(next_column_quality, axis=-1)
 
                     sess.run(self.optimizer, feed_dict={
                         self.modified_rotation: rotation_quality,

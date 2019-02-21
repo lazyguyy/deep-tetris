@@ -11,6 +11,7 @@ def render_board(board):
     for l in range(len(board)):
         line = ''.join(character(e) for e in board[l, :])
         print(f"|{line}|")
+    print("-" * (len(board[0]) + 2))
 
 
 def get_move():
