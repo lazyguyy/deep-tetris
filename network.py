@@ -4,9 +4,9 @@ import tetris
 import tqdm
 
 
-NUM_TILES = len(tetris.BASIC_TILES)
-NUM_EPISODES = ...
-BATCH_SIZE = 64
+NUM_TILES = len(tetris.TILES)
+NUM_EPISODES = 2**10
+BATCH_SIZE = 2**5
 WIDTH, HEIGHT = 10, 20
 EMA_FACTOR = 0.999
 RANDOM_MOVE_PROBABILITY = 0.1
@@ -47,7 +47,9 @@ def main():
 
             while ...:
                 rotation_quality, column_quality = sess.run((output_rotation, output_column), feed_dict={
-                    depths: ..., tile_id: ...})
+                    depths: ...,
+                    tile_id: ...
+                    })
 
                 rot = np.argmax(rotation_quality)
                 col = np.argmax(column_quality)
@@ -59,7 +61,9 @@ def main():
                 # execute action here
 
                 next_rotation_quality, next_column_quality = sess.run((output_rotation, output_column), feed_dict={
-                    depths: ..., tile_id: ...})
+                    depths: ...,
+                    tile_id: ...
+                    })
 
                 rotation_quality[:, rot] = reward + EMA_FACTOR * np.max(next_rotation_quality)
                 column_quality[:, col] = reward + EMA_FACTOR * np.max(next_column_quality)
@@ -68,7 +72,8 @@ def main():
                     modified_rotation: rotation_quality,
                     modified_column: column_quality,
                     depths: ...,
-                    tile_id: ...})
+                    tile_id: ...
+                    })
 
                 # update local state here
 
