@@ -10,8 +10,8 @@ NUM_TILES = len(tetris.TILES)
 NUM_EPISODES = 2**9
 BATCH_SIZE = 2**8
 LOSSES_PER_EPISODE = 2**4 * BATCH_SIZE
-PENALTY_PER_LOSS = 30
-WIDTH, HEIGHT = 10, 20
+PENALTY_PER_LOSS = 100
+WIDTH, HEIGHT = 4, 20
 EMA_FACTOR = 0.999
 RANDOM_MOVE_PROBABILITY = 0.995
 DECAY = 0.999
@@ -52,7 +52,7 @@ class depths_network:
 
             placed_tiles = 0
             for episode in range(num_episodes):
-                game = tetris.tetris_batch(BATCH_SIZE, rows=20)
+                game = tetris.tetris_batch(BATCH_SIZE, rows=HEIGHT, cols=WIDTH)
 
                 lost_games = 0
                 # with tqdm.tqdm(total=LOSSES_PER_EPISODE) as pbar:
@@ -67,10 +67,10 @@ class depths_network:
                         self.depths: old_depths,
                         self.tile_ids: old_tile_ids
                         })
-                    print("Random bound, iterations: ", max(0.1, round(random_threshold, 5)), placed_tiles)
-                    print("Depths:", old_depths[0])
-                    print("Tile Ids:", old_tile_ids[0])
-                    print("Output:", np.round(np.sum(move[0].reshape(WIDTH, 4), axis=-1), 5))
+                    print("random, i: ", max(0.1, round(random_threshold, 5)), placed_tiles)
+                    # print("Depths:", old_depths[0])
+                    # print("Tile Ids:", old_tile_ids[0])
+                    print("Output:", np.round(np.sum(move[0].reshape(WIDTH, 4), axis=-1), 4))
 
                     best_index = np.argmax(move, axis=-1)
                     col, rot = np.unravel_index(best_index, (WIDTH, 4))
@@ -87,9 +87,11 @@ class depths_network:
                         self.tile_ids: game.tiles
                         })
 
-                    lost_game_penalty = np.where(lost, np.zeros(BATCH_SIZE), -PENALTY_PER_LOSS * np.ones(BATCH_SIZE))
+                    lost_game_penalty = np.where(lost, -PENALTY_PER_LOSS * np.ones(BATCH_SIZE), np.zeros(BATCH_SIZE))
+                    update = lost_game_penalty + reward + EMA_FACTOR * np.max(next_move, axis=-1)
+                    print(update[:4])
 
-                    move[:, best_index] = lost_game_penalty + reward + EMA_FACTOR * np.max(next_move, axis=-1)
+                    move[:, best_index] = update
 
                     sess.run(self.optimizer, feed_dict={
                         self.modified_output: move,
