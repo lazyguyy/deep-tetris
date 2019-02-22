@@ -34,7 +34,8 @@ def main():
 
         points, lost = np.zeros(batch_size, dtype=np.int32), [False]
         for i in range(10):
-            render_board(board.get_boards())
+            render_board(board.get_boards()[:1])
+            print(board.score[:1])
             move = get_move()
             if move == 'd':
                 move = 1 * np.ones(batch_size, dtype=np.int32)

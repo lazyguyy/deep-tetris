@@ -58,7 +58,7 @@ def clear_single_board(board):
         return 0
     board[-lines:] = board[to_delete]
     board[:-lines] = np.zeros(board[:-lines].shape)
-    return (len(board) - lines) ** 2
+    return 5 * (len(board) - lines) ** 2
 
 clear_multiple_boards = np.vectorize(clear_single_board, signature="(m,n)->()")
 
@@ -116,11 +116,14 @@ class tetris_batch:
         for board in self.boards:
             board[:-self.offset, self.offset:-self.offset] = np.zeros((rows, cols))
         # current tile for each board
-        self.tiles = np.random.choice(len(TILES), batch_size, True)
+        # self.tiles = np.random.choice(len(TILES), batch_size, True)
+        self.tiles = np.zeros(batch_size, dtype=np.int32)
         # current position of each eachs board tile
         self.positions = np.zeros((batch_size, 2), dtype=np.int32) + [0, self.offset]
         # current rotation of eachs board tile
         self.rotations = np.zeros(batch_size, dtype=np.int32)
+        # game score
+        self.score = np.zeros(batch_size, dtype=np.int32)
 
 
 
@@ -145,6 +148,10 @@ class tetris_batch:
         self.positions = np.where(np.dstack([is_not_okay, is_not_okay]), self.positions, positions).squeeze(axis=0)
         self.rotations = np.where(is_not_okay, self.rotations, rotations)
 
+
+        lost = np.zeros(self.batch_size, dtype=np.bool)
+        points = np.zeros(self.batch_size, dtype=np.int32)
+
         # drop tiles
         if np.any(moves == tetris_batch.DROP):
             heights = multiple_board_heights(self.boards[moves == tetris_batch.DROP])
@@ -155,10 +162,6 @@ class tetris_batch:
             self.positions[moves == tetris_batch.DROP] += np.dstack([drop_heights, np.zeros(drop_heights.shape, dtype=np.int32)]).squeeze(axis=0)
             # respawn tiles, adjust points and test whether players lost the game
             points, lost = self.respawn_tiles(moves == tetris_batch.DROP)
-
-
-        lost = np.zeros(self.batch_size, dtype=np.bool)
-        points = np.zeros(self.batch_size, dtype=np.int32)
 
 
         return points, lost
@@ -176,12 +179,14 @@ class tetris_batch:
         # generate a new tile for each dropped tile
         new_tiles = sum(players)
 
-        self.tiles[players] = np.random.choice(len(TILES), new_tiles, True)
+        # self.tiles[players] = np.random.choice(len(TILES), new_tiles, True)
+        self.tiles[players] = np.zeros(new_tiles, dtype=np.int32)
         self.positions[players] = np.zeros((new_tiles, 2), dtype=np.int32) + [0, self.offset]
         self.rotations[players] = np.zeros(new_tiles, dtype=np.int32)
 
         # clear lines and give players points
         points = clear_multiple_boards(self.boards[:,:-self.offset, self.offset:-self.offset])
+        self.score[players] += points
 
         # check whether players lost and restart the game if necessary
         lost[players] = test_multiple_tiles(self.boards[players],
@@ -191,6 +196,7 @@ class tetris_batch:
         for i, board in enumerate(self.boards):
             if lost[i]:
                 board[:-self.offset, self.offset:-self.offset] = np.zeros((self.rows, self.cols))
+        self.score[lost] = np.zeros(prefix_sum[-1], dtype=np.int32)
         return points, lost
 
     # this will never be used by a human and is just here for computer training
@@ -212,7 +218,7 @@ class tetris_batch:
 
         moves = tetris_batch.DROP * np.ones(self.batch_size, dtype=np.int32)
         points, lost = self.make_moves(moves)
-        return points + 1, lost
+        return lost, points
 
 
     # drop all tiles down a single row
