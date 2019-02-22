@@ -46,6 +46,10 @@ def test_single_tile(board, tile, position):
 
 test_multiple_tiles = np.vectorize(test_single_tile, signature="(m,n),(o,o),(2)->()")
 
+#def test_multiple_tiles(boards, tiles, positions):
+#
+#	pass
+
 def clear_single_board(board):
     board.flags.writeable = True
     to_delete = np.logical_not(np.apply_along_axis(np.all, 1, board))
