@@ -23,17 +23,15 @@ def make_network(depths, tile_id, activation=None, bias=True):
 
     depths = tf.layers.batch_normalization(depths, training=True)
     input_layer = tf.concat([one_hot_tile_id, depths], axis=-1)
-    input_layer = tf.layers.dense(input_layer, 64, activation=tf.nn.relu, use_bias=bias)
+    # input_layer = tf.layers.dense(input_layer, 64, activation=tf.nn.relu, use_bias=bias)
 
     output = tf.layers.dense(input_layer, 4 * WIDTH, activation=activation, use_bias=False)
-    # output_column = tf.layers.dense(input_layer, WIDTH, activation=activation, use_bias=False)
 
     output = tf.nn.softmax(output)
 
     return output
 
 def make_loss(output, modified_output):
-    # rotation_loss = tf.reduce_mean(tf.square(output_rotation - modified_rotation))
     loss = tf.reduce_mean(tf.square(output - modified_output))
     return loss
 
@@ -48,7 +46,7 @@ class depths_network:
         self.output = make_network(self.depths, self.tile_ids, activation=None)
 
         self.loss = make_loss(self.output, self.modified_output)
-        self.optimizer = tf.train.GradientDescentOptimizer(1e-4).minimize(self.loss)
+        self.optimizer = tf.train.GradientDescentOptimizer(1e-5).minimize(self.loss)
 
     def train(self, num_episodes=NUM_EPISODES):
         with tf.Session() as sess:
@@ -64,8 +62,8 @@ class depths_network:
                 while lost_games < LOSSES_PER_EPISODE:
                     random_threshold = RANDOM_MOVE_PROBABILITY  * DECAY ** (placed_tiles // 10)
                     placed_tiles += 1
-                    render_board(game.get_boards()[:1])
-                    print(game.score[:1])
+                    render_board(game.get_boards()[:4])
+                    print(game.score[:4])
                     old_depths = np.copy(game.depths)
                     old_tile_ids = np.copy(game.tiles)
                     move = sess.run(self.output, feed_dict={
