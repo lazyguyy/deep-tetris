@@ -52,12 +52,13 @@ test_multiple_tiles = np.vectorize(test_single_tile, signature="(m,n),(o,o),(2)-
 
 def clear_single_board(board):
     board.flags.writeable = True
-    to_delete = np.logical_not(np.apply_along_axis(np.all, 1, board))
-    lines = np.sum(to_delete)
+    keep = np.logical_not(np.apply_along_axis(np.all, 1, board))
+    lines = np.sum(keep)
     if lines == 0:
         return 0
-    board[-lines:] = board[to_delete]
-    board[:-lines] = np.zeros(board[:-lines].shape)
+    board[-lines:] = board[keep]
+    board[:-lines] = 0
+    # print(f"Cleared {len(board) - lines} lines (Keeping {lines}).")
     return 5 * (len(board) - lines) ** 2
 
 clear_multiple_boards = np.vectorize(clear_single_board, signature="(m,n)->()")
@@ -195,7 +196,7 @@ class tetris_batch:
         prefix_sum = np.cumsum(lost)
         for i, board in enumerate(self.boards):
             if lost[i]:
-                board[:-self.offset, self.offset:-self.offset] = np.zeros((self.rows, self.cols))
+                board[:-self.offset, self.offset:-self.offset] = 0
         self.score[lost] = np.zeros(prefix_sum[-1], dtype=np.int32)
         return points, lost
 
@@ -218,7 +219,7 @@ class tetris_batch:
 
         moves = tetris_batch.DROP * np.ones(self.batch_size, dtype=np.int32)
         points, lost = self.make_moves(moves)
-        return lost, points
+        return points, lost
 
 
     # drop all tiles down a single row
