@@ -7,11 +7,13 @@ def character(num):
     return ' ' if not num else str(num)
 
 
-def render_board(board):
-    for l in range(len(board)):
-        line = ''.join(character(e) for e in board[l, :])
-        print(f"|{line}|")
-    print("-" * (len(board[0]) + 2))
+def render_board(boards):
+    for l in range(boards.shape[1]):
+        for board in boards[:, l]:
+            line = ''.join(character(e) for e in board)
+            print(f"|{line}|", end="      ")
+        print()
+    print()
 
 
 def get_move():
@@ -32,7 +34,7 @@ def main():
 
         points, lost = np.zeros(batch_size, dtype=np.int32), [False]
         for i in range(10):
-            render_board(board.get_boards()[0])
+            render_board(board.get_boards())
             move = get_move()
             if move == 'd':
                 move = 1 * np.ones(batch_size, dtype=np.int32)

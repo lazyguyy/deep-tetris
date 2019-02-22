@@ -3,10 +3,10 @@ import numpy as np
 ROWS, COLUMNS = 20, 10
 
 TILES = np.array([
-[[[0,1,1,0], [0,1,1,0], [0,0,0,0], [0,0,0,0]],
- [[0,1,1,0], [0,1,1,0], [0,0,0,0], [0,0,0,0]],
- [[0,1,1,0], [0,1,1,0], [0,0,0,0], [0,0,0,0]],
- [[0,1,1,0], [0,1,1,0], [0,0,0,0], [0,0,0,0]]],
+[[[1,1,0,0], [1,1,0,0], [0,0,0,0], [0,0,0,0]],
+ [[1,1,0,0], [1,1,0,0], [0,0,0,0], [0,0,0,0]],
+ [[1,1,0,0], [1,1,0,0], [0,0,0,0], [0,0,0,0]],
+ [[1,1,0,0], [1,1,0,0], [0,0,0,0], [0,0,0,0]]],
 
 [[[0,0,0,0], [2,2,2,0], [0,0,2,0], [0,0,0,0]],
  [[0,2,0,0], [0,2,0,0], [2,2,0,0], [0,0,0,0]],
@@ -38,6 +38,7 @@ TILES = np.array([
  [[0,0,0,0], [7,7,7,7], [0,0,0,0], [0,0,0,0]],
  [[0,0,7,0], [0,0,7,0], [0,0,7,0], [0,0,7,0]]]
 ], dtype=np.int32)
+
 
 def test_single_tile(board, tile, position):
     x, y, l = position[0], position[1], len(tile)
@@ -75,7 +76,21 @@ def drop_single_tile(tile, heights, position):
     has_tiles = np.apply_along_axis(np.any, 0, tile)
     return min((heights[y:y + l] - (x + (l - single_board_heights(tile[::-1]))))[has_tiles])
 
-drop_multiple_tiles = np.vectorize(drop_single_tile, signature="(o,o),(m),(2)->()")
+# expects a copy of board, otherwise shit breaks
+def drop_single_tile(tile, board, position):
+    x, y, l = position[0], position[1], len(tile)
+    has_tiles = np.apply_along_axis(np.any, 0, tile)
+    tile_heights = x + (l - single_board_heights(tile[::-1]))
+    drop_depth = 100
+    for i in range(l):
+        if has_tiles[i]:
+            drop_depth = min(drop_depth, (board[tile_heights[i]:, y + i] != 0).argmax())
+    return drop_depth
+
+drop_multiple_tiles = np.vectorize(drop_single_tile, signature="(o,o),(m,n),(2)->()")
+
+# TILE_HEIGHTS = [multiple_board_heights(rotations) for rotations in TILES]
+# print(TILE_HEIGHTS)
 
 class tetris_batch:
 
@@ -131,10 +146,10 @@ class tetris_batch:
             heights = multiple_board_heights(self.boards[moves == tetris_batch.DROP])
             drop_heights = drop_multiple_tiles(
                             TILES[self.tiles[moves == tetris_batch.DROP], rotations[moves == tetris_batch.DROP] % 4],
-                            heights,
+                            self.boards[moves == tetris_batch.DROP],
                             positions[moves == tetris_batch.DROP])
             self.positions[moves == tetris_batch.DROP] += np.dstack([drop_heights, np.zeros(drop_heights.shape, dtype=np.int32)]).squeeze(axis=0)
-            # respawn tiles adjust points and test whether players lost the game
+            # respawn tiles, adjust points and test whether players lost the game
             points, lost = self.respawn_tiles(moves == tetris_batch.DROP)
 
 
@@ -176,7 +191,7 @@ class tetris_batch:
 
     # this will never be used by a human and is just here for computer training
     def drop_in(self, col, rot):
-        col += self.offset
+        col = np.copy(col) + self.offset
         max_moves = np.max(np.abs(col - self.positions[:,1]))
 
         for _ in range(max_moves):
@@ -192,7 +207,8 @@ class tetris_batch:
             self.make_moves(moves)
 
         moves = tetris_batch.DROP * np.ones(self.batch_size, dtype=np.int32)
-        return self.make_moves(moves)
+        points, lost = self.make_moves(moves)
+        return points + 1, lost
 
 
     # drop all tiles down a single row

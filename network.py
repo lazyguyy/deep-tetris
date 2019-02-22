@@ -8,9 +8,9 @@ from keyboard_player import render_board
 
 NUM_TILES = len(tetris.TILES)
 NUM_EPISODES = 2**5
-BATCH_SIZE = 2**2
+BATCH_SIZE = 2**7
 LOSSES_PER_EPISODE = 2 * BATCH_SIZE
-PENALTY_PER_LOSS = 1
+PENALTY_PER_LOSS = 10
 WIDTH, HEIGHT = 10, 20
 EMA_FACTOR = 0.999
 RANDOM_MOVE_PROBABILITY = 0.1
@@ -55,7 +55,7 @@ class depths_network:
 
                 lost_games = 0
                 while lost_games < LOSSES_PER_EPISODE:
-                    render_board(game.get_boards()[0])
+                    render_board(game.get_boards()[:4])
                     old_depths = np.copy(game.depths)
                     old_tile_ids = np.copy(game.tiles)
                     rotation_quality, column_quality = sess.run((self.output_rotation, self.output_column), feed_dict={
@@ -66,9 +66,9 @@ class depths_network:
                     rot = np.argmax(rotation_quality, axis=-1)
                     col = np.argmax(column_quality, axis=-1)
 
-                    # if np.random.uniform(0, 1) < RANDOM_MOVE_PROBABILITY:
-                    #     rot = np.random.choice(4, BATCH_SIZE, True)
-                    #     col = np.random.choice(WIDTH, BATCH_SIZE, True)
+                    if np.random.uniform(0, 1) < RANDOM_MOVE_PROBABILITY:
+                        rot = np.random.choice(4, BATCH_SIZE, True)
+                        col = np.random.choice(WIDTH, BATCH_SIZE, True)
 
                     reward, lost = game.drop_in(col, rot)
 
@@ -80,10 +80,6 @@ class depths_network:
                     lost_game_penalty = np.where(lost, np.zeros(BATCH_SIZE), -PENALTY_PER_LOSS * np.ones(BATCH_SIZE))
 
                     rotation_quality[:, rot] = lost_game_penalty + reward + EMA_FACTOR * np.max(next_rotation_quality, axis=-1)
-                    print(col)
-                    print(column_quality)
-                    print(column_quality.shape)
-                    print(column_quality[:, col].shape)
                     column_quality[:, col] = lost_game_penalty + reward + EMA_FACTOR * np.max(next_column_quality, axis=-1)
 
                     sess.run(self.optimizer, feed_dict={
