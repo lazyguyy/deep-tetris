@@ -20,16 +20,13 @@ dtype = tf.float64
 
 def make_network(depths, tile_id):
     one_hot_tile_id = tf.one_hot(tile_id, NUM_TILES, dtype=dtype)
+    normalized_depths = tf.layers.batch_normalization(depths, training=True)
 
-    depths = tf.layers.batch_normalization(depths, training=True)
-    input_layer = tf.concat([one_hot_tile_id, depths], axis=-1)
-    # input_layer = tf.layers.dense(input_layer, 64, activation=tf.nn.relu, use_bias=bias)
+    input_layer = tf.concat([one_hot_tile_id, normalized_depths], axis=-1)
+    hidden_layer = tf.layers.dense(input_layer, 64, activation=tf.nn.relu, use_bias=True)
+    output = tf.layers.dense(hidden_layer, 4 * WIDTH, activation=None, use_bias=False)
 
-    output = tf.layers.dense(input_layer, 4 * WIDTH, activation=activation, use_bias=False)
-
-    output = tf.nn.softmax(output)
-
-    return output
+    return tf.nn.softmax(output)
 
 def make_loss(output, modified_output):
     loss = tf.reduce_mean(tf.square(output - modified_output))
