@@ -24,7 +24,7 @@ class TetrisGame(Widget):
     def __init__(self):
         super().__init__()
 
-        self.board = B
+        self.board = ...
         self.tile_margin = 1
         self.size_hint = None, None
 

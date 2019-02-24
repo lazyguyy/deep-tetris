@@ -44,11 +44,18 @@ def render_state(screen, state, offset=1):
 
 def render_progress(screen, current, total, offset=0):
     height, width = screen.dimensions
-    bar_width = width - LABEL_WIDTH - 2
-    progress = current * bar_width // total
-    bar = '|' + '=' * progress + ' ' * (bar_width - progress) + '|'
+    bar_width = width - LABEL_WIDTH - 3
+    label_width = LABEL_WIDTH
+
+    if bar_width > 5:
+        progress = current * bar_width // total
+        bar = '|' + '=' * progress + ' ' * (bar_width - progress) + '| '
+    else:
+        label_width = width
+        bar = ''
+
     label = f'{current}/{total}'
-    screen.print_at(bar + f' {label:<{LABEL_WIDTH - 1}}', x=0, y=height - 1 - offset)
+    screen.print_at(bar + f'{label:<{label_width}}', x=0, y=height - 1 - offset)
 
 
 def train(screen):
