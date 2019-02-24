@@ -39,6 +39,8 @@ TILES = np.array([
  [[0,0,7,0], [0,0,7,0], [0,0,7,0], [0,0,7,0]]]
 ], dtype=np.int32)
 
+NUM_TILES = len(TILES)
+
 
 def test_single_tile(board, tile, position):
     x, y, l = position[0], position[1], len(tile)

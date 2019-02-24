@@ -65,10 +65,6 @@ class TetrisGame(Widget):
                 Rectangle(pos=(x, y), size=(size, size))
 
 
-B = np.ones((20, 10))
-B[1:5, 0:2] = 6
-B[6:8, 1:7] = 2
-
 class TetrisApp(App):
     def __init__(self):
         super().__init__()
