@@ -16,11 +16,11 @@ RANDOM_MOVE_PROBABILITY_DECAY = 0.9999
 
 
 BOARD_X_OFFSET = 0
-BOARD_Y_OFFSET = 0
+BOARD_Y_OFFSET = 1
 BOARD_SPACING = 1
 LABEL_WIDTH = 20
 
-def render_boards(screen, boards, cutoff=1):
+def render_boards(screen, boards, points, cutoff=1):
     def to_chr(num):
         return ' ' if not num else str(num)
 
@@ -32,6 +32,12 @@ def render_boards(screen, boards, cutoff=1):
                 x=x * (tetris.COLUMNS + BOARD_SPACING + 2) + BOARD_X_OFFSET,
                 y=y + BOARD_Y_OFFSET,
                 colour=Screen.COLOUR_WHITE
+            )
+    for x in range(min(boards.shape[0], cutoff)):
+        screen.print_at(
+            f"Score: {str(points[x]):>4}",
+            x=x * (tetris.COLUMNS + BOARD_SPACING + 2) + BOARD_X_OFFSET,
+            y=0,
             )
 
 def render_state(screen, state, offset=1):
@@ -121,7 +127,7 @@ def train(screen):
                     # ('tile ids', old_tile_ids[0]),
                     # ('output', np.round(np.sum(move[0].reshape(tetris.COLUMNS, 4), axis=-1), 4)),
                 ]
-                render_boards(screen, game.get_boards(), cutoff=8)
+                render_boards(screen, game.get_boards(), game.score, cutoff=8)
                 render_state(screen, state)
                 render_progress(screen, lost_games, LOSSES_PER_EPISODE)
                 ev = screen.get_key()
