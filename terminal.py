@@ -125,7 +125,7 @@ def train(screen):
                 render_state(screen, state)
                 render_progress(screen, lost_games, LOSSES_PER_EPISODE)
                 ev = screen.get_key()
-                if ev in (ord('p'), ord('P')):
+                if ev in (ord('P'), ord('p')):
                     probability_override = not probability_override
                 if ev == ord('+'):
                     random_move_probability += 0.01
