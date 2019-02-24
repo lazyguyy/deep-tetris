@@ -12,7 +12,7 @@ LOSSES_PER_EPISODE = 2**4 * BATCH_SIZE
 PENALTY_PER_LOSS = -100
 EMA_FACTOR = 0.999
 RANDOM_MOVE_BASE_PROBABILITY = 0.995
-RANDOM_MOVE_PROBABILITY_DECAY = 0.999
+RANDOM_MOVE_PROBABILITY_DECAY = 0.9999
 
 
 BOARD_X_OFFSET = 0
@@ -64,6 +64,8 @@ def train(screen):
 
         sess.run(tf.global_variables_initializer())
 
+        random_move_probability = RANDOM_MOVE_BASE_PROBABILITY
+        probability_override = False
         total_iterations = 0
         for episode in range(NUM_EPISODES):
             game = tetris.tetris_batch(BATCH_SIZE, rows=tetris.ROWS, cols=tetris.COLUMNS)
@@ -71,7 +73,8 @@ def train(screen):
             lost_games = 0
             while lost_games < LOSSES_PER_EPISODE:
                 total_iterations += 1
-                random_move_probability = max(0.1, RANDOM_MOVE_BASE_PROBABILITY * RANDOM_MOVE_PROBABILITY_DECAY ** (total_iterations // 10))
+                if not probability_override:
+                    random_move_probability = max(0.1, random_move_probability * RANDOM_MOVE_PROBABILITY_DECAY)
 
                 old_depths = np.copy(game.depths)
                 old_tile_ids = np.copy(game.tiles)
@@ -85,7 +88,7 @@ def train(screen):
                 col, rot = np.unravel_index(best_index, (tetris.COLUMNS, 4))
 
                 # explore instead
-                if np.random.uniform(0, 1) < random_move_probability:
+                if not probability_override and np.random.uniform(0, 1) < random_move_probability:
                     rot = np.random.choice(4, BATCH_SIZE, True)
                     col = np.random.choice(tetris.COLUMNS, BATCH_SIZE, True)
 
@@ -101,6 +104,7 @@ def train(screen):
 
                 move[:, best_index] = update
 
+                # update model
                 sess.run(model.optimizer, feed_dict={
                     model.feedback: move,
                     model.depths: old_depths,
@@ -111,15 +115,23 @@ def train(screen):
 
                 state = [
                     ('i', total_iterations),
-                    ('depths', old_depths[0]),
-                    ('tile ids', old_tile_ids[0]),
-                    ('output', np.round(np.sum(move[0].reshape(tetris.COLUMNS, 4), axis=-1), 4))
+                    ('prob', np.round(random_move_probability, 4)),
+                    ('override', probability_override),
+                    # ('depths', old_depths[0]),
+                    # ('tile ids', old_tile_ids[0]),
+                    # ('output', np.round(np.sum(move[0].reshape(tetris.COLUMNS, 4), axis=-1), 4)),
                 ]
-                render_boards(screen, game.get_boards(), cutoff=4)
+                render_boards(screen, game.get_boards(), cutoff=8)
                 render_state(screen, state)
                 render_progress(screen, lost_games, LOSSES_PER_EPISODE)
                 ev = screen.get_key()
-                if ev in (ord('Q'), ord('q')):
+                if ev in (ord('p'), ord('P')):
+                    probability_override = not probability_override
+                if ev == ord('+'):
+                    random_move_probability += 0.01
+                if ev == ord('-'):
+                    random_move_probability -= 0.01
+                elif ev in (ord('Q'), ord('q')):
                     return
                 screen.refresh()
 

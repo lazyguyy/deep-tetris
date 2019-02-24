@@ -244,7 +244,7 @@ class tetris_batch:
 
     def get_boards(self):
         boards = np.copy(self.boards)
-        put_tiles_in_boards(boards, TILES[self.tiles, self.rotations % 4], self.positions)
+        # put_tiles_in_boards(boards, TILES[self.tiles, self.rotations % 4], self.positions)
         return boards[:,:-self.offset, self.offset:-self.offset]
 
     @property
