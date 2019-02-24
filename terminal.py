@@ -46,7 +46,7 @@ def render_progress(screen, current, total, offset=0):
     height, width = screen.dimensions
     bar_width = width - LABEL_WIDTH - 2
     progress = current * bar_width // total
-    bar = '|' + '=' * progress + '>' + ' ' * (bar_width - progress - 1) + '|'
+    bar = '|' + '=' * progress + ' ' * (bar_width - progress) + '|'
     label = f'{current}/{total}'
     screen.print_at(bar + f' {label:<{LABEL_WIDTH - 1}}', x=0, y=height - 1 - offset)
 
@@ -65,8 +65,6 @@ def train(screen):
             while lost_games < LOSSES_PER_EPISODE:
                 total_iterations += 1
                 random_move_probability = max(0.1, RANDOM_MOVE_BASE_PROBABILITY * RANDOM_MOVE_PROBABILITY_DECAY ** (total_iterations // 10))
-
-                render_boards(screen, game.get_boards(), cutoff=4)
 
                 old_depths = np.copy(game.depths)
                 old_tile_ids = np.copy(game.tiles)
@@ -110,6 +108,7 @@ def train(screen):
                     ('tile ids', old_tile_ids[0]),
                     ('output', np.round(np.sum(move[0].reshape(tetris.COLUMNS, 4), axis=-1), 4))
                 ]
+                render_boards(screen, game.get_boards(), cutoff=4)
                 render_state(screen, state)
                 render_progress(screen, lost_games, LOSSES_PER_EPISODE)
                 ev = screen.get_key()
