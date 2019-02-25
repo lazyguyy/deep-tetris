@@ -10,7 +10,7 @@ def _make_network(depths, tile_id):
     input_layer = tf.concat([one_hot_tile_id, normalized_depths], axis=-1)
     hidden_layer = tf.layers.dense(input_layer, 64, activation=tf.nn.relu, use_bias=True)
 
-    output = tf.layers.dense(input_layer, 4 * tetris.COLUMNS, use_bias=False)
+    output = tf.layers.dense(hidden_layer, 4 * tetris.COLUMNS, use_bias=False)
 
     return tf.nn.softmax(output)
 
