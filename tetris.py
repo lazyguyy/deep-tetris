@@ -221,7 +221,8 @@ class tetris_batch:
 
     @property
     def bonus_points(self):
-        return self.boards[..., -self.offset - 1].sum(axis=-1)
+        return np.zeros(self.batch_size, dtype=np.int32)
+        # return self.boards[..., -self.offset - 1].sum(axis=-1)
 
 
     # drop all tiles down a single row

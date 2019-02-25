@@ -36,10 +36,11 @@ def render_boards(screen, boards, points, cutoff=1):
             )
     for x in range(min(boards.shape[0], cutoff)):
         screen.print_at(
-            f"Score: {str(points[x]):>4}",
+            f"{str(points[x]):>{tetris.COLUMNS + 1}}",
             x=x * (tetris.COLUMNS + BOARD_SPACING + 2) + BOARD_X_OFFSET,
             y=0,
             )
+
 
 def render_state(screen, state, offset=1):
     max_label_width = max((len(l) for l, _ in state), default=0)
@@ -121,7 +122,7 @@ def train(screen):
             state = [
                 ('prob', np.round(random_move_probability, 4)),
                 ('override', probability_override),
-                ('judgement', reward[:CUTOFF]),
+                ('judgement', update[:CUTOFF].round(2)),
                 ('games played', lost_games),
                 # ('tile ids', old_tile_ids[0]),
                 # ('output', np.round(np.sum(move[0].reshape(tetris.COLUMNS, 4), axis=-1), 4)),
