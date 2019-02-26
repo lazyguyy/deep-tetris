@@ -92,9 +92,6 @@ def drop_depths(tiles, boards, positions):
     relevant_columns = boards[batch_index, rows_index, columns_index]
     # find downwards tile extent
     tile_extent = TILE_SIZE - np.argmax(tiles[:, ::-1, :], axis=1)
-    # correct tile extent for columns the tile does not overlap
-    no_overlap = np.logical_not(np.any(tiles, axis=1))
-    tile_extent = np.where(no_overlap, 0, tile_extent)
     # correct tile extent with the amount the dile has already dropped
     tile_extent += positions[:, 0, np.newaxis]
     # mask: true if field is below tile extent
@@ -104,8 +101,11 @@ def drop_depths(tiles, boards, positions):
     collision_depths = np.argmax(collisions, axis=1)
     # find how much a tile can be dropped from its original position
     relative_collision_depth = collision_depths - tile_extent
+    # filter out columns which the tile does not overlap by setting depth to max
+    no_overlap = np.logical_not(np.any(tiles, axis=1))
+    relevant_relative_collision_depth = np.where(no_overlap, ROWS, relative_collision_depth)
     # the drop depth is the minimum collision depth over the valid columns
-    depths = np.min(relative_collision_depth, axis=1)
+    depths = np.min(relevant_relative_collision_depth, axis=1)
     return depths
 
 
