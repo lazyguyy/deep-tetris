@@ -145,6 +145,7 @@ class tetris_batch:
         is_not_okay = test_multiple_tiles(self.boards, TILES[self.tiles, rotations % 4], positions)
 
         # update position where possible
+        # TODO dstack should not be necessary due to broadcasting
         self.positions = np.where(np.dstack([is_not_okay, is_not_okay]), self.positions, positions).squeeze(axis=0)
         self.rotations = np.where(is_not_okay, self.rotations, rotations)
 
@@ -159,6 +160,8 @@ class tetris_batch:
                             TILES[self.tiles[moves == tetris_batch.DROP], rotations[moves == tetris_batch.DROP] % 4],
                             self.boards[moves == tetris_batch.DROP],
                             positions[moves == tetris_batch.DROP])
+            # TODO index position dimension accordingly
+            # positions[moves == tetris_batch.DROP, 0] += ...
             self.positions[moves == tetris_batch.DROP] += np.dstack([drop_heights, np.zeros(drop_heights.shape, dtype=np.int32)]).squeeze(axis=0)
             # respawn tiles, adjust points and test whether players lost the game
             points, lost = self.respawn_tiles(moves == tetris_batch.DROP)

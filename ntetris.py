@@ -79,6 +79,36 @@ def multiple_board_depths(boards):
     return (boards != 0).argmax(axis=1)
 
 
+# return maximum drop depth for a given tile
+def drop_depths(tiles, boards, positions):
+    # get columns overlapping with tile
+    tile_indices = np.arange(TILE_SIZE, dtype=np.intp)
+    columns_offsets = positions[:, 1, np.newaxis] + tile_indices
+
+    batch_index = np.arange(boards.shape[0], dtype=np.intp)[:, np.newaxis, np.newaxis]
+    rows_index = np.arange(boards.shape[1], dtype=np.intp)[np.newaxis, :, np.newaxis]
+    columns_index = columns_offsets[:, np.newaxis, :]
+    # index board
+    relevant_columns = boards[batch_index, rows_index, columns_index]
+    # find downwards tile extent
+    tile_extent = TILE_SIZE - np.argmax(tiles[:, ::-1, :], axis=1)
+    # correct tile extent for columns the tile does not overlap
+    no_overlap = np.logical_not(np.any(tiles, axis=1))
+    tile_extent = np.where(no_overlap, 0, tile_extent)
+    # correct tile extent with the amount the dile has already dropped
+    tile_extent += positions[:, 0, np.newaxis]
+    # mask: true if field is below tile extent
+    is_below_tile_extent = np.arange(relevant_columns.shape[1])[np.newaxis, :, np.newaxis] >= tile_extent
+    # find first collision point below tile extent
+    collisions = np.logical_and(relevant_columns != 0, is_below_tile_extent)
+    collision_depths = np.argmax(collisions, axis=1)
+    # find how much a tile can be dropped from its original position
+    relative_collision_depth = collision_depths - tile_extent
+    # the drop depth is the minimum collision depth over the valid columns
+    depths = np.min(relative_collision_depth, axis=1)
+    return depths
+
+
 # clear full rows
 def clear_multiple_boards(boards):
     keep = np.logical_not(np.all(boards, axis=2))
@@ -92,11 +122,11 @@ def clear_multiple_boards(boards):
     filled = np.where(keep[:, :, np.newaxis], boards, 0)
 
     # take boards in the same order as before
-    boards_indices = np.arange(boards.shape[0])[:, np.newaxis, np.newaxis]
+    boards_indices = np.arange(boards.shape[0], dtype=np.intp)[:, np.newaxis, np.newaxis]
     # select rows by new order
     rows_indices = sorted_indices[:, :, np.newaxis]
     # take columns in the same order as before
-    columns_indices = np.arange(boards.shape[2])[np.newaxis, np.newaxis, :]
+    columns_indices = np.arange(boards.shape[2], dtype=np.intp)[np.newaxis, np.newaxis, :]
 
     # update boards
     new_boards = filled[boards_indices, rows_indices, columns_indices]
@@ -105,7 +135,21 @@ def clear_multiple_boards(boards):
     return 5 * (boards.shape[1] - np.sum(keep, axis=1)) ** 2
 
 
-board = np.random.choice([0, 1, 2, 3], (2, 3, 4))
+tile = TILES[4][0][np.newaxis, :, :]
+
+ascii_board = [
+    '#     ',
+    '      ',
+    '     #',
+    '  ##  ',
+    '   #  ',
+]
+
+unpadded_board = np.array([[1 if c != ' ' else 0 for c in line] for line in ascii_board])
+board = np.ones((unpadded_board.shape[0] + 3, unpadded_board.shape[1] + 6), dtype=np.intp)
+board[0:-3, 3:-3] = unpadded_board
+board = board[np.newaxis, :, :]
 print(board)
-clear_multiple_boards(board)
-print(board)
+print(tile)
+pos = np.array([(0, 3)])
+print(drop_depths(tile, board, pos))
