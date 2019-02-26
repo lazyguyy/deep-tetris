@@ -8,6 +8,11 @@ TILES = np.array([
      [[1,1,0,0], [1,1,0,0], [0,0,0,0], [0,0,0,0]],
      [[1,1,0,0], [1,1,0,0], [0,0,0,0], [0,0,0,0]]],
 
+    [[[0,0,0,0], [7,7,7,7], [0,0,0,0], [0,0,0,0]],
+     [[0,0,7,0], [0,0,7,0], [0,0,7,0], [0,0,7,0]],
+     [[0,0,0,0], [7,7,7,7], [0,0,0,0], [0,0,0,0]],
+     [[0,0,7,0], [0,0,7,0], [0,0,7,0], [0,0,7,0]]],
+
     [[[0,0,0,0], [2,2,2,0], [0,0,2,0], [0,0,0,0]],
      [[0,2,0,0], [0,2,0,0], [2,2,0,0], [0,0,0,0]],
      [[2,0,0,0], [2,2,2,0], [0,0,0,0], [0,0,0,0]],
@@ -18,6 +23,11 @@ TILES = np.array([
      [[0,0,3,0], [3,3,3,0], [0,0,0,0], [0,0,0,0]],
      [[0,3,0,0], [0,3,0,0], [0,3,3,0], [0,0,0,0]]],
 
+    [[[0,6,0,0], [6,6,6,0], [0,0,0,0], [0,0,0,0]],
+     [[0,6,0,0], [0,6,6,0], [0,6,0,0], [0,0,0,0]],
+     [[0,0,0,0], [6,6,6,0], [0,6,0,0], [0,0,0,0]],
+     [[0,6,0,0], [6,6,0,0], [0,6,0,0], [0,0,0,0]]],
+
     [[[4,4,0,0], [0,4,4,0], [0,0,0,0], [0,0,0,0]],
      [[0,4,0,0], [4,4,0,0], [4,0,0,0], [0,0,0,0]],
      [[4,4,0,0], [0,4,4,0], [0,0,0,0], [0,0,0,0]],
@@ -27,16 +37,6 @@ TILES = np.array([
      [[5,0,0,0], [5,5,0,0], [0,5,0,0], [0,0,0,0]],
      [[0,5,5,0], [5,5,0,0], [0,0,0,0], [0,0,0,0]],
      [[5,0,0,0], [5,5,0,0], [0,5,0,0], [0,0,0,0]]],
-
-    [[[0,6,0,0], [6,6,6,0], [0,0,0,0], [0,0,0,0]],
-     [[0,6,0,0], [0,6,6,0], [0,6,0,0], [0,0,0,0]],
-     [[0,0,0,0], [6,6,6,0], [0,6,0,0], [0,0,0,0]],
-     [[0,6,0,0], [6,6,0,0], [0,6,0,0], [0,0,0,0]]],
-
-    [[[0,0,0,0], [7,7,7,7], [0,0,0,0], [0,0,0,0]],
-     [[0,0,7,0], [0,0,7,0], [0,0,7,0], [0,0,7,0]],
-     [[0,0,0,0], [7,7,7,7], [0,0,0,0], [0,0,0,0]],
-     [[0,0,7,0], [0,0,7,0], [0,0,7,0], [0,0,7,0]]]
 ], dtype=np.int32)
 
 NUM_TILES = len(TILES)
@@ -105,6 +105,7 @@ class tetris_batch:
     IDLE = 4
 
     def __init__(self, batch_size, rows=ROWS, cols=COLUMNS):
+        self.GENERATE_UP_TO = 7
         self.batch_size = batch_size
         # dimensions of the tetris grid
         self.rows = rows
@@ -116,7 +117,7 @@ class tetris_batch:
             board[:-self.offset, self.offset:-self.offset] = np.zeros((rows, cols))
         # current tile for each board
         # self.tiles = np.random.choice(len(TILES), batch_size, True)
-        self.tiles = np.zeros(batch_size, dtype=np.int32)
+        self.tiles = np.random.choice(self.GENERATE_UP_TO, batch_size, True)
         # current position of each eachs board tile
         self.positions = np.zeros((batch_size, 2), dtype=np.int32) + [0, self.offset]
         # current rotation of eachs board tile
@@ -179,7 +180,7 @@ class tetris_batch:
         new_tiles = sum(players)
 
         # self.tiles[players] = np.random.choice(len(TILES), new_tiles, True)
-        self.tiles[players] = np.zeros(new_tiles, dtype=np.int32)
+        self.tiles[players] = np.random.choice(self.GENERATE_UP_TO, new_tiles, True)
         self.positions[players] = np.zeros((new_tiles, 2), dtype=np.int32) + [0, self.offset]
         self.rotations[players] = np.zeros(new_tiles, dtype=np.int32)
 
@@ -221,7 +222,7 @@ class tetris_batch:
 
     @property
     def bonus_points(self):
-        return self.boards[..., -self.offset - 1].sum(axis=-1)
+        return 10 * (1 + ((self.boards[..., self.offset:-self.offset] != 0).argmax(axis=1).min(axis=1) * self.cols - (self.boards[:, :-self.offset, self.offset:-self.offset] == 0).sum(axis=(1, 2))) / (self.cols * self.rows))
 
 
     # drop all tiles down a single row
