@@ -14,14 +14,11 @@ EMA_FACTOR = 0.999
 RANDOM_MOVE_BASE_PROBABILITY = 0.995
 RANDOM_MOVE_PROBABILITY_DECAY = 0.9999
 
-
-BOARD_X_OFFSET = 0
-BOARD_Y_OFFSET = 1
 BOARD_SPACING = 1
 LABEL_WIDTH = 20
 CUTOFF = 8
 
-def render_boards(screen, boards, points, cutoff=1):
+def render_boards(screen, boards, labels=None, cutoff=1, offset=0):
     def to_chr(num):
         return ' ' if not num else str(num)
 
@@ -30,22 +27,27 @@ def render_boards(screen, boards, points, cutoff=1):
             line = '|' + ''.join(to_chr(n) for n in boards[x, y]) + '|'
             screen.print_at(
                 line,
-                x=x * (tetris.COLUMNS + BOARD_SPACING + 2) + BOARD_X_OFFSET,
-                y=y + BOARD_Y_OFFSET,
+                x=x * (tetris.COLUMNS + BOARD_SPACING + 2),
+                y=y + offset,
                 colour=Screen.COLOUR_WHITE
             )
-    for x in range(min(boards.shape[0], cutoff)):
-        screen.print_at(
-            f"Score: {str(points[x]):>4}",
-            x=x * (tetris.COLUMNS + BOARD_SPACING + 2) + BOARD_X_OFFSET,
-            y=0,
-            )
+    if labels:
+        for y, arr in enumerate(labels):
+            for x in range(min(boards.shape[0], cutoff)):
+                line = f'{arr[x]:0.2f}'
+                screen.print_at(
+                    line,
+                    x=x * (tetris.COLUMNS + BOARD_SPACING + 2),
+                    y=y + tetris.ROWS + offset,
+                    colour=Screen.COLOUR_WHITE
+                )
+
 
 def render_state(screen, state, offset=1):
     max_label_width = max((len(l) for l, _ in state), default=0)
     for i in range(len(state)):
         label, value = state[i]
-        y = tetris.ROWS + BOARD_Y_OFFSET + offset + i
+        y = tetris.ROWS + offset + i
         screen.print_at(label, x=0, y=y)
         screen.print_at(str(value), x=max_label_width + 2, y=y)
 
