@@ -87,10 +87,9 @@ class TetrisApp(App):
         self.sess.run(tf.global_variables_initializer())
         tf.train.Saver().restore(self.sess, LOAD_PATH)
 
-
         self.game = tetris.tetris_batch(1)
 
-        Clock.schedule_interval(self.step, 1)
+        Clock.schedule_interval(self.step, 0.1)
 
     def step(self, *_):
         move = self.sess.run(self.model.output, feed_dict={
