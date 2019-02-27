@@ -254,4 +254,3 @@ class tetris_batch:
     @property
     def depths(self):
         return multiple_board_depths(self.boards[..., PADDING:-PADDING])
-

@@ -13,14 +13,14 @@ BATCH_SIZE = 2**11
 LOSSES_PER_EPISODE = 2**4 * BATCH_SIZE
 PENALTY_PER_LOSS = -100
 EMA_FACTOR = 0.999
-RANDOM_MOVE_BASE_PROBABILITY = 0.995
+RANDOM_MOVE_BASE_PROBABILITY = 1
 RANDOM_MOVE_PROBABILITY_DECAY = 0.9999
 
 BOARD_SPACING = 1
 LABEL_WIDTH = 20
 CUTOFF = 8
 GIVE_BONUS_POINTS = True
-save_path = "./model/model"
+SAVE_PATH = "./model/model"
 MAX_VALUE_WIDTH = 20
 
 def render_boards(screen, boards, labels=None, cutoff=1, offset=0):
@@ -145,14 +145,14 @@ def train(screen):
             elif ev == ord('b'):
                 give_bonus_points = not give_bonus_points
             elif ev == ord('l'):
-                saver.restore(sess, save_path)
-                game_state = pickle.load(open(save_path + "state", "rb"))
+                saver.restore(sess, SAVE_PATH)
+                game_state = pickle.load(open(SAVE_PATH + "state", "rb"))
                 lost_games = game_state["games"]
                 random_move_probability = game_state["probability"]
             elif ev in (ord('q'), ord('s')):
                 game_state = {"games": lost_games, "probability": random_move_probability}
-                pickle.dump(game_state, open(save_path + "state", "wb"))
-                saver.save(sess, save_path)
+                pickle.dump(game_state, open(SAVE_PATH + "state", "wb"))
+                saver.save(sess, SAVE_PATH)
                 if ev == ord('q'):
                     return
 
@@ -164,12 +164,12 @@ def train(screen):
                 np.abs(next_move).max(axis=1).round(4)
             ], cutoff=CUTOFF)
             render_state(screen, [
-                ('prob', np.round(random_move_probability, 4)),
-                ('override', probability_override),
+                ('random move probability', np.round(random_move_probability, 4)),
+                ('inference mode', probability_override),
                 ('games played', lost_games),
                 ('bonus points', give_bonus_points),
-                (f'moves / second', int(BATCH_SIZE / (end_time - start_time))),
-            ], offset=3)
+                ('moves per second', int(BATCH_SIZE / (end_time - start_time))),
+            ], offset=4)
             # render_progress(screen, lost_games)
             screen.refresh()
 
