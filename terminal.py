@@ -2,7 +2,9 @@ import tensorflow as tf
 import numpy as np
 import network
 import pickle
+import time
 import ntetris as tetris
+
 
 from asciimatics.screen import Screen
 
@@ -88,6 +90,7 @@ def train(screen):
 
         lost_games = 0
         while ...:
+            start_time = time.time()
             if not probability_override:
                 random_move_probability = max(0.1, random_move_probability * RANDOM_MOVE_PROBABILITY_DECAY)
 
@@ -153,14 +156,19 @@ def train(screen):
                 if ev == ord('q'):
                     return
 
+            render_boards(screen, game.unpadded_boards, labels=[game.score, np.round(bonus_points(), 2), np.abs(next_move[:CUTOFF]).max(axis=1).round(2)], cutoff=CUTOFF)
+
+            end_time = time.time()
+
             state = [
                 ('prob', np.round(random_move_probability, 4)),
                 ('override', probability_override),
                 ('games played', lost_games),
                 ('bonus points', give_bonus_points),
+                (f'moves / second', int(BATCH_SIZE / (end_time - start_time)))
                 # ('output', np.round(np.sum(move[0].reshape(tetris.COLUMNS, 4), axis=-1), 4)),
             ]
-            render_boards(screen, game.unpadded_boards, labels=[game.score, np.round(bonus_points(), 2), np.abs(next_move[:CUTOFF]).max(axis=1).round(2)], cutoff=CUTOFF)
+
             render_state(screen, state, offset=3)
             # render_progress(screen, lost_games)
             screen.refresh()
