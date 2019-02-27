@@ -160,8 +160,8 @@ def train(screen):
 
             render_boards(screen, game.unpadded_boards, labels=[
                 game.score,
-                np.round(bonus_points(), 2),
-                np.abs(next_move).max(axis=1).round(2)
+                np.round(bonus_points(), 4),
+                np.abs(next_move).max(axis=1).round(4)
             ], cutoff=CUTOFF)
             render_state(screen, [
                 ('prob', np.round(random_move_probability, 4)),
