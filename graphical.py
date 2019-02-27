@@ -1,5 +1,7 @@
 import kivy
 import os
+import network
+import ntetris as tetris
 import numpy as np
 import tensorflow as tf
 
@@ -11,6 +13,8 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.widget import Widget
 
 kivy.require('1.10.1')
+
+LOAD_PATH = "./model/model"
 
 COLOR_MAP = {
     1: (0.15, 0.27, 0.58),
@@ -76,16 +80,29 @@ class TetrisApp(App):
         super().__init__()
         self.title = "Tetris"
         self.renderer = TetrisBoardWidget()
-        self.sess = tf.Session()
 
-        self.board = ...
+        # restore model
+        self.sess = tf.Session()
+        self.model = network.depths_network()
+        self.sess.run(tf.global_variables_initializer())
+        tf.train.Saver().restore(self.sess, LOAD_PATH)
+
+
+        self.game = tetris.tetris_batch(1)
 
         Clock.schedule_interval(self.step, 1)
 
-    def step(self):
+    def step(self, *_):
+        move = self.sess.run(self.model.output, feed_dict={
+            self.model.depths: self.game.depths,
+            self.model.tile_ids: self.game.tiles,
+            })
 
+        best_index = np.argmax(move, axis=1)
+        col, rot = np.unravel_index(best_index, (tetris.COLUMNS, 4))
+        self.game.drop_in(col, rot)
 
-        self.renderer.show_board(...)
+        self.renderer.show_board(self.game.unpadded_boards[0])
 
     def on_stop(self):
         self.sess.close()
