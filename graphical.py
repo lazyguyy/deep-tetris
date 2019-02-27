@@ -1,6 +1,7 @@
 import kivy
 import os
 import numpy as np
+import tensorflow as tf
 
 from kivy.app import App
 from kivy.clock import Clock
@@ -21,15 +22,13 @@ COLOR_MAP = {
     7: (0.89, 0.15, 0.1),
 }
 
-class TetrisGame(Widget):
+class TetrisBoardWidget(Widget):
     def __init__(self):
         super().__init__()
 
-        self.board = ...
+        self.board = np.zeros((1, 1))
         self.tile_margin = 1
         self.size_hint = None, None
-
-        Clock.schedule_interval(self.step, 1)
 
         with self.canvas:
             self.callback = Callback(self.update)
@@ -49,8 +48,8 @@ class TetrisGame(Widget):
         self.size = w, h
         self.pos = x, y
 
-    def step(self, *_):
-
+    def show_board(self, board):
+        self.board = board
         self.update()
 
     def update(self, *_):
@@ -76,11 +75,24 @@ class TetrisApp(App):
     def __init__(self):
         super().__init__()
         self.title = "Tetris"
-        self.game = TetrisGame()
+        self.renderer = TetrisBoardWidget()
+        self.sess = tf.Session()
+
+        self.board = ...
+
+        Clock.schedule_interval(self.step, 1)
+
+    def step(self):
+
+
+        self.renderer.show_board(...)
+
+    def on_stop(self):
+        self.sess.close()
 
     def build(self):
         layout = BoxLayout()
-        layout.add_widget(self.game)
+        layout.add_widget(self.renderer)
         return layout
 
 

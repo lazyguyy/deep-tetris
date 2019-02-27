@@ -256,7 +256,7 @@ class tetris_batch:
 
     @property
     def unpadded_boards(self):
-        return self.boards[:,:-PADDING, PADDING:-PADDING]
+        return self.boards[:, :-PADDING, PADDING:-PADDING]
 
 
     @property
