@@ -121,6 +121,7 @@ def train(screen):
             lost_game_penalty = np.where(lost, PENALTY_PER_LOSS, 0)
             update = lost_game_penalty + reward + EMA_FACTOR * np.max(next_move, axis=-1)
 
+            # TODO CHANGE BEST INDEX TO ROW, COL !!!!!!!
             move[:, best_index] = update
 
             # update model

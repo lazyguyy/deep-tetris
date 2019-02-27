@@ -3,6 +3,7 @@ import os
 import numpy as np
 
 from kivy.app import App
+from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.graphics import *
 from kivy.uix.boxlayout import BoxLayout
@@ -28,6 +29,8 @@ class TetrisGame(Widget):
         self.tile_margin = 1
         self.size_hint = None, None
 
+        Clock.schedule_interval(self.step, 1)
+
         with self.canvas:
             self.callback = Callback(self.update)
 
@@ -46,7 +49,11 @@ class TetrisGame(Widget):
         self.size = w, h
         self.pos = x, y
 
-    def update(self, instruction):
+    def step(self, *_):
+
+        self.update()
+
+    def update(self, *_):
         self.canvas.clear()
         self.update_size_and_position()
 
