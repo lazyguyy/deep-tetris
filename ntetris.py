@@ -39,7 +39,7 @@ TILES = np.array([
      [[0, 0, 7, 0], [0, 0, 7, 0], [0, 0, 7, 0], [0, 0, 7, 0]]]
 ], dtype=np.int32)
 
-NUM_TILES = 1  # TILES.shape[0]
+NUM_TILES = TILES.shape[0]
 TILE_SIZE = TILES.shape[-1]
 
 # get the tiles indexed by positions
@@ -234,7 +234,7 @@ class tetris_batch:
     def generate_new_tiles(self, indices):
         new_tiles_count = np.sum(indices)
 
-        self.tiles[indices] = 0#np.random.choice(NUM_TILES, new_tiles_count, replace=True)
+        self.tiles[indices] = np.random.choice(NUM_TILES, new_tiles_count, replace=True)
         self.positions[indices] = (0, PADDING)
         self.rotations[indices] = 0
 
