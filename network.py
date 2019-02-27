@@ -8,7 +8,7 @@ def _make_network(depths, tile_id):
     normalized_depths = tf.layers.batch_normalization(depths, training=True)
 
     input_layer = tf.concat([one_hot_tile_id, normalized_depths], axis=-1)
-    hidden_layer = tf.layers.dense(input_layer, 64, activation=tf.nn.relu, use_bias=True)
+    hidden_layer = tf.layers.dense(input_layer, 128, activation=tf.nn.relu, use_bias=True)
 
     output = tf.layers.dense(hidden_layer, 4 * tetris.COLUMNS, use_bias=False)
 

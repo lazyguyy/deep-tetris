@@ -214,8 +214,8 @@ class tetris_batch:
         new_tiles_count = np.sum(indices)
 
         self.tiles[indices] = np.random.choice(NUM_TILES, new_tiles_count, replace=True)
-        self.positions[indices] = np.zeros((new_tiles_count, 2), dtype=np.intp) + (0, PADDING)
-        self.rotations[indices] = np.zeros(new_tiles_count, dtype=np.int)
+        self.positions[indices] = (0, PADDING)
+        self.rotations[indices] = 0
 
     def advance(self):
         new_positions = self.positions + (1, 0)

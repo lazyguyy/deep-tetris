@@ -91,6 +91,7 @@ def train(screen):
             return depths * density_points
 
         lost_games = 0
+        average_time = 0
         while ...:
             start_time = time.time()
             if not probability_override:
@@ -156,7 +157,10 @@ def train(screen):
                 if ev == ord('q'):
                     return
 
+            render_boards(screen, game.unpadded_boards, labels=[game.score, np.round(update, 2), np.abs(next_move[:CUTOFF]).max(axis=1).round(2)], cutoff=CUTOFF)
+
             end_time = time.time()
+            average_time = 0.7 * average_time + 0.3 * (end_time - start_time)
 
             render_boards(screen, game.unpadded_boards, labels=[
                 game.score,
@@ -168,7 +172,7 @@ def train(screen):
                 ('inference mode', probability_override),
                 ('games played', lost_games),
                 ('bonus points', give_bonus_points),
-                ('moves per second', int(BATCH_SIZE / (end_time - start_time))),
+                ('moves per second', int(BATCH_SIZE / average_time)),
             ], offset=4)
             # render_progress(screen, lost_games)
             screen.refresh()
