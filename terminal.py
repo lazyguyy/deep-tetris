@@ -7,8 +7,7 @@ import ntetris as tetris
 from asciimatics.screen import Screen
 
 
-NUM_EPISODES = 2**9
-BATCH_SIZE = 2**8
+BATCH_SIZE = 2**11
 LOSSES_PER_EPISODE = 2**4 * BATCH_SIZE
 PENALTY_PER_LOSS = -100
 EMA_FACTOR = 0.999
@@ -101,12 +100,11 @@ def train(screen):
 
             # get target column and rotation
             best_index = np.argmax(move, axis=-1)
+            if not probability_override and np.random.uniform(0, 1) < random_move_probability:
+                best_index = np.random.choice(4 * tetris.COLUMNS, BATCH_SIZE, True)
             col, rot = np.unravel_index(best_index, (tetris.COLUMNS, 4))
 
             # explore instead
-            if not probability_override and np.random.uniform(0, 1) < random_move_probability:
-                rot = np.random.choice(4, BATCH_SIZE, True)
-                col = np.random.choice(tetris.COLUMNS, BATCH_SIZE, True)
 
             reward, lost = game.drop_in(col, rot)
             reward = reward.astype(np.float64)
@@ -163,7 +161,7 @@ def train(screen):
                 # ('output', np.round(np.sum(move[0].reshape(tetris.COLUMNS, 4), axis=-1), 4)),
             ]
             render_boards(screen, game.unpadded_boards, labels=[game.score, np.round(bonus_points(), 2), np.abs(next_move[:CUTOFF]).max(axis=1).round(2)], cutoff=CUTOFF)
-            render_state(screen, state, offset=2)
+            render_state(screen, state, offset=3)
             # render_progress(screen, lost_games)
             screen.refresh()
 
