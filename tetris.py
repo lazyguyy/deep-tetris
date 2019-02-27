@@ -222,8 +222,9 @@ class tetris_batch:
 
     @property
     def bonus_points(self):
-        return 10 * (1 + ((self.boards[..., self.offset:-self.offset] != 0).argmax(axis=1).min(axis=1) * self.cols - (self.boards[:, :-self.offset, self.offset:-self.offset] == 0).sum(axis=(1, 2))) / (self.cols * self.rows))
-
+        depths = (self.boards[..., self.offset:-self.offset] != 0).argmax(axis=1).min(axis=1)
+        density_points = (1 + (depths * self.cols - (self.boards[:, :-self.offset, self.offset:-self.offset] == 0).sum(axis=(1, 2))) / (self.cols * self.rows))
+        return depths * density_points
 
     # drop all tiles down a single row
     def advance(self):
