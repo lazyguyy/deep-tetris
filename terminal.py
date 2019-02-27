@@ -157,7 +157,7 @@ def train(screen):
                 if ev == ord('q'):
                     return
 
-            render_boards(screen, game.unpadded_boards, labels=[game.score, np.round(bonus_points(), 2), np.abs(next_move[:CUTOFF]).max(axis=1).round(2)], cutoff=CUTOFF)
+            render_boards(screen, game.unpadded_boards, labels=[game.score, np.round(update, 2), np.abs(next_move[:CUTOFF]).max(axis=1).round(2)], cutoff=CUTOFF)
 
             end_time = time.time()
             average_time = 0.7 * average_time + 0.3 * (end_time - start_time)
