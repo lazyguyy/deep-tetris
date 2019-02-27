@@ -162,7 +162,7 @@ def train(screen):
                 # ('output', np.round(np.sum(move[0].reshape(tetris.COLUMNS, 4), axis=-1), 4)),
             ]
             render_boards(screen, game.get_boards(), labels=[game.score, np.round(game.bonus_points, 2), np.abs(next_move[:CUTOFF]).max(axis=1).round(2)], cutoff=CUTOFF)
-            render_state(screen, state, offset=2)
+            render_state(screen, state, offset=3)
             # render_progress(screen, lost_games)
             screen.refresh()
 
