@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import network
+import pickle
 import tetris
 
 from asciimatics.screen import Screen
@@ -18,6 +19,7 @@ BOARD_SPACING = 1
 LABEL_WIDTH = 20
 CUTOFF = 8
 GIVE_BONUS_POINTS = True
+save_path = "./model/model"
 
 def render_boards(screen, boards, labels=None, cutoff=1, offset=0):
     def to_chr(num):
@@ -71,8 +73,9 @@ def render_progress(screen, current, total, offset=0):
 def train(screen):
     with tf.Session() as sess:
         model = network.depths_network()
-
         sess.run(tf.global_variables_initializer())
+
+        saver = tf.train.Saver()
 
         random_move_probability = RANDOM_MOVE_BASE_PROBABILITY
         give_bonus_points = GIVE_BONUS_POINTS
@@ -126,7 +129,7 @@ def train(screen):
 
 
             ev = screen.get_key()
-            if ev in (ord('P'), ord('p')):
+            if ev == ord('p'):
                 probability_override = not probability_override
             elif ev == ord('+'):
                 random_move_probability += 0.01
@@ -138,8 +141,17 @@ def train(screen):
                 game.GENERATE_UP_TO = max(game.GENERATE_UP_TO - 1, 1)
             elif ev == ord('b'):
                 give_bonus_points = not give_bonus_points
-            elif ev in (ord('Q'), ord('q')):
-                return
+            elif ev == ord('l'):
+                saver.restore(sess, save_path)
+                game_state = pickle.load(open(save_path + "state", "rb"))
+                lost_games = game_state["games"]
+                random_move_probability = game_state["probability"]
+            elif ev in (ord('q'), ord('s')):
+                game_state = {"games": lost_games, "probability": random_move_probability}
+                pickle.dump(game_state, open(save_path + "state", "wb"))
+                saver.save(sess, save_path)
+                if ev == ord('q'):
+                    return
 
             state = [
                 ('prob', np.round(random_move_probability, 4)),
