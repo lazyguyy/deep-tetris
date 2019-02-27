@@ -7,8 +7,7 @@ import ntetris as tetris
 from asciimatics.screen import Screen
 
 
-NUM_EPISODES = 2**9
-BATCH_SIZE = 2**8
+BATCH_SIZE = 2**10
 LOSSES_PER_EPISODE = 2**4 * BATCH_SIZE
 PENALTY_PER_LOSS = -100
 EMA_FACTOR = 0.999
