@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 import network
 import pickle
-import tetris
+import ntetris as tetris
 
 from asciimatics.screen import Screen
 
@@ -74,13 +74,18 @@ def train(screen):
     with tf.Session() as sess:
         model = network.depths_network()
         sess.run(tf.global_variables_initializer())
-
         saver = tf.train.Saver()
 
         random_move_probability = RANDOM_MOVE_BASE_PROBABILITY
         give_bonus_points = GIVE_BONUS_POINTS
         probability_override = False
-        game = tetris.tetris_batch(BATCH_SIZE, rows=tetris.ROWS, cols=tetris.COLUMNS)
+        game = tetris.tetris_batch(BATCH_SIZE)
+
+        def bonus_points():
+            depths = (game.boards[..., tetris.PADDING:-tetris.PADDING] != 0).argmax(axis=1).min(axis=1)
+            density_points = (1 + (depths * tetris.COLUMNS - (game.boards[:, :-tetris.PADDING, tetris.PADDING:-tetris.PADDING] == 0).sum(axis=(1, 2))) / (tetris.COLUMNS * tetris.ROWS))
+            return depths * density_points
+
 
         lost_games = 0
         while ...:
@@ -106,7 +111,7 @@ def train(screen):
             reward, lost = game.drop_in(col, rot)
             reward = reward.astype(np.float64)
             if give_bonus_points:
-                reward += game.bonus_points
+                reward += bonus_points()
 
             next_move = sess.run(model.output, feed_dict={
                 model.depths: game.depths,
@@ -135,10 +140,6 @@ def train(screen):
                 random_move_probability += 0.01
             elif ev == ord('-'):
                 random_move_probability -= 0.01
-            elif ev == ord('m'):
-                game.GENERATE_UP_TO = min(game.GENERATE_UP_TO + 1, 7)
-            elif ev == ord('n'):
-                game.GENERATE_UP_TO = max(game.GENERATE_UP_TO - 1, 1)
             elif ev == ord('b'):
                 give_bonus_points = not give_bonus_points
             elif ev == ord('l'):
@@ -157,11 +158,10 @@ def train(screen):
                 ('prob', np.round(random_move_probability, 4)),
                 ('override', probability_override),
                 ('games played', lost_games),
-                ('tiles for choice', game.GENERATE_UP_TO),
                 ('bonus points', give_bonus_points),
                 # ('output', np.round(np.sum(move[0].reshape(tetris.COLUMNS, 4), axis=-1), 4)),
             ]
-            render_boards(screen, game.get_boards(), labels=[game.score, np.round(game.bonus_points, 2), np.abs(next_move[:CUTOFF]).max(axis=1).round(2)], cutoff=CUTOFF)
+            render_boards(screen, game.unpadded_boards, labels=[game.score, np.round(bonus_points(), 2), np.abs(next_move[:CUTOFF]).max(axis=1).round(2)], cutoff=CUTOFF)
             render_state(screen, state, offset=3)
             # render_progress(screen, lost_games)
             screen.refresh()

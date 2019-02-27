@@ -92,10 +92,10 @@ def drop_depths(tiles, boards, positions):
     relevant_columns = boards[batch_index, rows_index, columns_index]
     # find downwards tile extent
     tile_extent = TILE_SIZE - np.argmax(tiles[:, ::-1, :], axis=1)
-    # correct tile extent with the amount the dile has already dropped
+    # correct tile extent with the amount the tile has already dropped
     tile_extent += positions[:, 0, np.newaxis]
     # mask: true if field is below tile extent
-    is_below_tile_extent = np.arange(relevant_columns.shape[1])[np.newaxis, :, np.newaxis] >= tile_extent
+    is_below_tile_extent = np.arange(relevant_columns.shape[1])[np.newaxis, :, np.newaxis] >= tile_extent[:, np.newaxis, :]
     # find first collision point below tile extent
     collisions = np.logical_and(relevant_columns != 0, is_below_tile_extent)
     collision_depths = np.argmax(collisions, axis=1)
@@ -115,7 +115,7 @@ def clear_multiple_boards(boards):
     # count survivors
     prefix_sum = np.cumsum(keep, axis=1)
     # replace rows to remove with smaller value
-    surviving_indices = np.where(keep, prefix_sum, -1)
+    surviving_indices = np.where(keep, prefix_sum, 0)
     # sort the indices, rows to remove will be at the start
     sorted_indices = np.argsort(surviving_indices, axis=1)
     # replace rows to remove with zeros
@@ -135,21 +135,132 @@ def clear_multiple_boards(boards):
     return 5 * (boards.shape[1] - np.sum(keep, axis=1)) ** 2
 
 
-tile = TILES[4][0][np.newaxis, :, :]
 
-ascii_board = [
-    '#     ',
-    '      ',
-    '     #',
-    '  ##  ',
-    '   #  ',
-]
+MOVE_LEFT = 0
+MOVE_RIGHT = 1
+ROTATE = 2
+DROP = 3
+IDLE = 4
 
-unpadded_board = np.array([[1 if c != ' ' else 0 for c in line] for line in ascii_board])
-board = np.ones((unpadded_board.shape[0] + 3, unpadded_board.shape[1] + 6), dtype=np.intp)
-board[0:-3, 3:-3] = unpadded_board
-board = board[np.newaxis, :, :]
-print(board)
-print(tile)
-pos = np.array([(0, 3)])
-print(drop_depths(tile, board, pos))
+PADDING = TILE_SIZE - 1
+
+class tetris_batch:
+    def __init__(self, batch_size):
+        self.batch_size = batch_size
+        self.boards = np.full(shape=(batch_size, ROWS + PADDING, COLUMNS + 2 * PADDING), fill_value=-1, dtype=np.int)
+        self.boards[:, :-PADDING, PADDING:-PADDING] = 0
+        self.tiles = np.empty(shape=batch_size, dtype=np.int)
+        self.positions = np.zeros(shape=(batch_size, 2), dtype=np.intp)
+        self.rotations = np.zeros(shape=batch_size, dtype=np.int)
+        self.score = np.zeros(shape=batch_size, dtype=np.int)
+
+        self.generate_new_tiles(np.full(batch_size, True))
+
+
+    def make_moves(self, moves):
+        new_positions = np.copy(self.positions)
+        new_rotations = np.copy(self.rotations)
+
+        # make moves
+        new_positions[moves == MOVE_LEFT] += (0, -1)
+        new_positions[moves == MOVE_RIGHT] += (0, 1)
+        new_rotations[moves == ROTATE] += 1
+        new_rotations[moves == ROTATE] %= 4
+
+        # reset illegal moves
+        is_not_okay = test_multiple_tiles(self.boards, TILES[self.tiles, new_rotations], new_positions)
+
+        self.positions = np.where(is_not_okay[:, np.newaxis], self.positions, new_positions)
+        self.rotations = np.where(is_not_okay, self.rotations, new_rotations)
+
+        # perform drops
+        drop_indices = moves == DROP
+        depths = drop_depths(
+            TILES[self.tiles[drop_indices], self.rotations[drop_indices]],
+            self.boards[drop_indices],
+            self.positions[drop_indices]
+        )
+
+        self.positions[drop_indices, 0] += depths
+
+        # find points and test for lost boards
+        points, lost = self.respawn_tiles(drop_indices)
+        return points, lost
+
+
+    def respawn_tiles(self, indices):
+        # fix dropped tiles
+        self.boards[indices] = put_tiles_in_boards(
+            self.boards[indices],
+            TILES[self.tiles[indices], self.rotations[indices]],
+            self.positions[indices]
+        )
+
+        self.generate_new_tiles(indices)
+
+        # clear lines, adjust score
+        points = clear_multiple_boards(self.unpadded_boards)
+        self.score += points
+
+        # check whether players lost and restart the game if necessary
+        lost = np.full(self.batch_size, False, dtype=np.bool)
+        lost[indices] = test_multiple_tiles(
+            self.boards[indices],
+            TILES[self.tiles[indices], self.rotations[indices]],
+            self.positions[indices]
+        )
+        self.boards[lost, :-PADDING, PADDING:-PADDING] = 0
+        self.score[lost] = 0
+        return points, lost
+
+
+    def generate_new_tiles(self, indices):
+        new_tiles_count = np.sum(indices)
+
+        self.tiles[indices] = np.random.choice(NUM_TILES, new_tiles_count, replace=True)
+        self.positions[indices] = np.zeros((new_tiles_count, 2), dtype=np.intp) + PADDING
+        self.rotations[indices] = np.zeros(new_tiles_count, dtype=np.int)
+
+
+    def advance(self):
+        new_positions = self.positions + (1, 0)
+
+        # test if drop is possible
+        is_not_okay = test_multiple_tiles(self.boards, TILES[self.tiles, self.rotations % 4], new_positions)
+        self.positions = np.where(is_not_okay, self.positions, new_positions)
+
+        # spawn new tiles for each tile that dropped
+        points, lost = self.respawn_tiles(is_not_okay)
+        return points, lost
+
+
+    def drop_in(self, col, rot):
+        col = col + PADDING
+        max_moves = np.max(np.abs(col - self.positions[:, 1]))
+
+        for _ in range(max_moves):
+            moves = IDLE * np.ones(self.batch_size, dtype=np.int)
+            moves[self.positions[:, 1] < col] = MOVE_RIGHT
+            moves[self.positions[:, 1] > col] = MOVE_LEFT
+            self.make_moves(moves)
+
+        for _ in range(3):
+            moves = IDLE * np.ones(self.batch_size, dtype=np.int)
+            moves[self.rotations % 4 != rot % 4] = ROTATE
+            self.make_moves(moves)
+
+        moves = DROP * np.ones(self.batch_size, dtype=np.int)
+        points, lost = self.make_moves(moves)
+        return points, lost
+
+
+    @property
+    def unpadded_boards(self):
+        return self.boards[:,:-PADDING, PADDING:-PADDING]
+
+
+    @property
+    def depths(self):
+        return multiple_board_depths(self.boards[..., PADDING:-PADDING])
+
+
