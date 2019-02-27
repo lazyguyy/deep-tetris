@@ -89,6 +89,7 @@ def train(screen):
 
 
         lost_games = 0
+        average_time = 0
         while ...:
             start_time = time.time()
             if not probability_override:
@@ -159,13 +160,14 @@ def train(screen):
             render_boards(screen, game.unpadded_boards, labels=[game.score, np.round(bonus_points(), 2), np.abs(next_move[:CUTOFF]).max(axis=1).round(2)], cutoff=CUTOFF)
 
             end_time = time.time()
+            average_time = 0.7 * average_time + 0.3 * (end_time - start_time)
 
             state = [
                 ('prob', np.round(random_move_probability, 4)),
                 ('override', probability_override),
                 ('games played', lost_games),
                 ('bonus points', give_bonus_points),
-                (f'moves / second', int(BATCH_SIZE / (end_time - start_time)))
+                (f'moves / second', int(BATCH_SIZE / average_time))
                 # ('output', np.round(np.sum(move[0].reshape(tetris.COLUMNS, 4), axis=-1), 4)),
             ]
 
