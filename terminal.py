@@ -143,11 +143,11 @@ def train(screen):
             state = [
                 ('prob', np.round(random_move_probability, 4)),
                 ('override', probability_override),
-                ('judgement', game.bonus_points[:CUTOFF]),
                 ('games played', lost_games),
                 ('tiles for choice', game.GENERATE_UP_TO),
                 ('bonus points', give_bonus_points),
-                # ('tile ids', old_tile_ids[0]),
+                ('max output', np.abs(next_move[:CUTOFF]).max(axis=1).round(2)),
+                ('judgement', update[:CUTOFF].round(2)),
                 # ('output', np.round(np.sum(move[0].reshape(tetris.COLUMNS, 4), axis=-1), 4)),
             ]
             render_boards(screen, game.get_boards(), game.score, cutoff=CUTOFF)
