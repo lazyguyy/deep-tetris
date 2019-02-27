@@ -2,7 +2,9 @@ import tensorflow as tf
 import numpy as np
 import network
 import pickle
+import time
 import ntetris as tetris
+
 
 from asciimatics.screen import Screen
 
@@ -19,6 +21,7 @@ LABEL_WIDTH = 20
 CUTOFF = 8
 GIVE_BONUS_POINTS = True
 save_path = "./model/model"
+MAX_VALUE_WIDTH = 20
 
 def render_boards(screen, boards, labels=None, cutoff=1, offset=0):
     def to_chr(num):
@@ -44,11 +47,10 @@ def render_boards(screen, boards, labels=None, cutoff=1, offset=0):
                     colour=Screen.COLOUR_WHITE
                 )
 
-
 def render_state(screen, state, offset=1):
     max_label_width = max((len(l) for l, _ in state), default=0)
     value_offset = max_label_width + 2
-    value_width = min(screen.width - value_offset, 20)
+    value_width = min(screen.width - value_offset, MAX_VALUE_WIDTH)
     for i in range(len(state)):
         label, value = state[i]
         y = tetris.ROWS + offset + i
@@ -89,6 +91,7 @@ def train(screen):
 
         lost_games = 0
         while ...:
+            start_time = time.time()
             if not probability_override:
                 random_move_probability = max(0.1, random_move_probability * RANDOM_MOVE_PROBABILITY_DECAY)
 
@@ -152,6 +155,8 @@ def train(screen):
                 if ev == ord('q'):
                     return
 
+            end_time = time.time()
+
             render_boards(screen, game.unpadded_boards, labels=[
                 game.score,
                 np.round(bonus_points(), 2),
@@ -162,6 +167,7 @@ def train(screen):
                 ('override', probability_override),
                 ('games played', lost_games),
                 ('bonus points', give_bonus_points),
+                (f'moves / second', int(BATCH_SIZE / (end_time - start_time))),
             ], offset=3)
             # render_progress(screen, lost_games)
             screen.refresh()
