@@ -39,7 +39,7 @@ TILES = np.array([
      [[0, 0, 7, 0], [0, 0, 7, 0], [0, 0, 7, 0], [0, 0, 7, 0]]]
 ], dtype=np.int32)
 
-NUM_TILES = TILES.shape[0]
+NUM_TILES = 1  # TILES.shape[0]
 TILE_SIZE = TILES.shape[-1]
 
 # get the tiles indexed by positions
@@ -100,12 +100,12 @@ def drop_depths(tiles, boards, positions):
     collisions = np.logical_and(relevant_columns != 0, is_below_tile_extent)
     collision_depths = np.argmax(collisions, axis=1)
     # find how much a tile can be dropped from its original position
-    relative_collision_depth = collision_depths - tile_extent
+    relative_collision_depths = collision_depths - tile_extent
     # filter out columns which the tile does not overlap by setting depth to max
     no_overlap = np.logical_not(np.any(tiles, axis=1))
-    relevant_relative_collision_depth = np.where(no_overlap, ROWS, relative_collision_depth)
+    relevant_relative_collision_depths = np.where(no_overlap, ROWS, relative_collision_depths)
     # the drop depth is the minimum collision depth over the valid columns
-    depths = np.min(relevant_relative_collision_depth, axis=1)
+    depths = np.min(relevant_relative_collision_depths, axis=1)
     return depths
 
 
@@ -136,6 +136,26 @@ def clear_multiple_boards(boards):
 
 
 
+# tile = TILES[4][0][np.newaxis, :, :]
+# ascii_board = [
+#     '#     ',
+#     '      ',
+#     '     #',
+#     '   #  ',
+#     '   #  ',
+# ]
+
+# unpadded_board = np.array([[1 if c != ' ' else 0 for c in line] for line in ascii_board])
+# board = np.ones((unpadded_board.shape[0] + 3, unpadded_board.shape[1] + 6), dtype=np.intp)
+# board[0:-3, 3:-3] = unpadded_board
+# board = board[np.newaxis, :, :]
+# print(board)
+# print(tile)
+# pos = np.array([(0, 3)])
+# print(board[make_indices(pos)])
+# print(drop_depths(tile, board, pos))
+
+
 MOVE_LEFT = 0
 MOVE_RIGHT = 1
 ROTATE = 2
@@ -155,7 +175,6 @@ class tetris_batch:
         self.score = np.zeros(shape=batch_size, dtype=np.int)
 
         self.generate_new_tiles(np.full(batch_size, True))
-
 
     def make_moves(self, moves):
         new_positions = np.copy(self.positions)
@@ -187,7 +206,6 @@ class tetris_batch:
         points, lost = self.respawn_tiles(drop_indices)
         return points, lost
 
-
     def respawn_tiles(self, indices):
         # fix dropped tiles
         self.boards[indices] = put_tiles_in_boards(
@@ -213,14 +231,12 @@ class tetris_batch:
         self.score[lost] = 0
         return points, lost
 
-
     def generate_new_tiles(self, indices):
         new_tiles_count = np.sum(indices)
 
         self.tiles[indices] = 0#np.random.choice(NUM_TILES, new_tiles_count, replace=True)
         self.positions[indices] = PADDING
         self.rotations[indices] = 0
-
 
     def advance(self):
         new_positions = self.positions + (1, 0)
@@ -233,34 +249,30 @@ class tetris_batch:
         points, lost = self.respawn_tiles(is_not_okay)
         return points, lost
 
-
     def drop_in(self, col, rot):
         col = col + PADDING
         max_moves = np.max(np.abs(col - self.positions[:, 1]))
 
         for _ in range(max_moves):
-            moves = IDLE * np.ones(self.batch_size, dtype=np.int)
+            moves = np.full(self.batch_size, IDLE, dtype=np.int)
             moves[self.positions[:, 1] < col] = MOVE_RIGHT
             moves[self.positions[:, 1] > col] = MOVE_LEFT
             self.make_moves(moves)
 
         for _ in range(3):
-            moves = IDLE * np.ones(self.batch_size, dtype=np.int)
+            moves = np.full(self.batch_size, IDLE, dtype=np.int)
             moves[self.rotations % 4 != rot % 4] = ROTATE
             self.make_moves(moves)
 
-        moves = DROP * np.ones(self.batch_size, dtype=np.int)
+        moves = np.full(self.batch_size, DROP, dtype=np.int)
         points, lost = self.make_moves(moves)
         return points, lost
-
 
     @property
     def unpadded_boards(self):
         return self.boards[:, :-PADDING, PADDING:-PADDING]
 
-
     @property
     def depths(self):
         return multiple_board_depths(self.boards[..., PADDING:-PADDING])
-
 

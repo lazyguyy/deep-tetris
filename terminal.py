@@ -21,6 +21,7 @@ LABEL_WIDTH = 20
 CUTOFF = 8
 GIVE_BONUS_POINTS = True
 save_path = "./model/model"
+MAX_VALUE_WIDTH = 20
 
 def render_boards(screen, boards, labels=None, cutoff=1, offset=0):
     def to_chr(num):
@@ -46,14 +47,16 @@ def render_boards(screen, boards, labels=None, cutoff=1, offset=0):
                     colour=Screen.COLOUR_WHITE
                 )
 
-
 def render_state(screen, state, offset=1):
     max_label_width = max((len(l) for l, _ in state), default=0)
+    value_offset = max_label_width + 2
+    value_width = min(screen.width - value_offset, MAX_VALUE_WIDTH)
     for i in range(len(state)):
         label, value = state[i]
+        value = str(value).replace('\n', '')
         y = tetris.ROWS + offset + i
         screen.print_at(label, x=0, y=y)
-        screen.print_at(str(value), x=max_label_width + 2, y=y)
+        screen.print_at(f'{value:>{value_width}}', x=value_offset, y=y)
 
 def render_progress(screen, current, total, offset=0):
     height, width = screen.dimensions
@@ -86,7 +89,6 @@ def train(screen):
             depths = (game.boards[..., tetris.PADDING:-tetris.PADDING] != 0).argmax(axis=1).min(axis=1)
             density_points = (1 + (depths * tetris.COLUMNS - (game.boards[:, :-tetris.PADDING, tetris.PADDING:-tetris.PADDING] == 0).sum(axis=(1, 2))) / (tetris.COLUMNS * tetris.ROWS))
             return depths * density_points
-
 
         lost_games = 0
         average_time = 0
@@ -123,7 +125,6 @@ def train(screen):
             lost_game_penalty = np.where(lost, PENALTY_PER_LOSS, 0)
             update = lost_game_penalty + reward + EMA_FACTOR * np.max(next_move, axis=-1)
 
-            # TODO CHANGE BEST INDEX TO ROW, COL !!!!!!!
             move[:, best_index] = update
 
             # update model
@@ -134,7 +135,6 @@ def train(screen):
                 })
 
             lost_games += np.sum(lost)
-
 
             ev = screen.get_key()
             if ev == ord('p'):
@@ -162,16 +162,21 @@ def train(screen):
             end_time = time.time()
             average_time = 0.7 * average_time + 0.3 * (end_time - start_time)
 
-            state = [
+            render_boards(screen, game.unpadded_boards, labels=[
+                game.score,
+                np.round(bonus_points(), 4),
+                np.abs(next_move).max(axis=1).round(4)
+            ], cutoff=CUTOFF)
+            render_state(screen, [
                 ('prob', np.round(random_move_probability, 4)),
                 ('override', probability_override),
                 ('games played', lost_games),
                 ('bonus points', give_bonus_points),
                 (f'moves / second', int(BATCH_SIZE / average_time))
                 # ('output', np.round(np.sum(move[0].reshape(tetris.COLUMNS, 4), axis=-1), 4)),
-            ]
+            ],
+            3)
 
-            render_state(screen, state, offset=3)
             # render_progress(screen, lost_games)
             screen.refresh()
 
