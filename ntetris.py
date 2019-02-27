@@ -135,7 +135,6 @@ def clear_multiple_boards(boards):
     return 5 * (boards.shape[1] - np.sum(keep, axis=1)) ** 2
 
 
-
 MOVE_LEFT = 0
 MOVE_RIGHT = 1
 ROTATE = 2
@@ -155,7 +154,6 @@ class tetris_batch:
         self.score = np.zeros(shape=batch_size, dtype=np.int)
 
         self.generate_new_tiles(np.full(batch_size, True))
-
 
     def make_moves(self, moves):
         new_positions = np.copy(self.positions)
@@ -187,7 +185,6 @@ class tetris_batch:
         points, lost = self.respawn_tiles(drop_indices)
         return points, lost
 
-
     def respawn_tiles(self, indices):
         # fix dropped tiles
         self.boards[indices] = put_tiles_in_boards(
@@ -213,14 +210,12 @@ class tetris_batch:
         self.score[lost] = 0
         return points, lost
 
-
     def generate_new_tiles(self, indices):
         new_tiles_count = np.sum(indices)
 
         self.tiles[indices] = np.random.choice(NUM_TILES, new_tiles_count, replace=True)
         self.positions[indices] = np.zeros((new_tiles_count, 2), dtype=np.intp) + PADDING
         self.rotations[indices] = np.zeros(new_tiles_count, dtype=np.int)
-
 
     def advance(self):
         new_positions = self.positions + (1, 0)
@@ -232,7 +227,6 @@ class tetris_batch:
         # spawn new tiles for each tile that dropped
         points, lost = self.respawn_tiles(is_not_okay)
         return points, lost
-
 
     def drop_in(self, col, rot):
         col = col + PADDING
@@ -253,14 +247,11 @@ class tetris_batch:
         points, lost = self.make_moves(moves)
         return points, lost
 
-
     @property
     def unpadded_boards(self):
         return self.boards[:, :-PADDING, PADDING:-PADDING]
 
-
     @property
     def depths(self):
         return multiple_board_depths(self.boards[..., PADDING:-PADDING])
-
 

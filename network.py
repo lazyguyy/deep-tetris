@@ -1,5 +1,5 @@
 import tensorflow as tf
-import tetris
+import ntetris as tetris
 
 dtype = tf.float64
 
