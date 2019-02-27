@@ -53,9 +53,10 @@ def render_state(screen, state, offset=1):
     value_width = min(screen.width - value_offset, MAX_VALUE_WIDTH)
     for i in range(len(state)):
         label, value = state[i]
+        value = str(value).replace('\n', '')
         y = tetris.ROWS + offset + i
         screen.print_at(label, x=0, y=y)
-        screen.print_at(f'{str(value):>{value_width}}', x=value_offset, y=y)
+        screen.print_at(f'{value:>{value_width}}', x=value_offset, y=y)
 
 def render_progress(screen, current, total, offset=0):
     height, width = screen.dimensions
