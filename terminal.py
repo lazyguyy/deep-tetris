@@ -159,11 +159,9 @@ def train(screen):
                 ('games played', lost_games),
                 ('tiles for choice', game.GENERATE_UP_TO),
                 ('bonus points', give_bonus_points),
-                ('max output', np.abs(next_move[:CUTOFF]).max(axis=1).round(2)),
-                ('judgement', update[:CUTOFF].round(2)),
                 # ('output', np.round(np.sum(move[0].reshape(tetris.COLUMNS, 4), axis=-1), 4)),
             ]
-            render_boards(screen, game.get_boards(), labels=[game.score, np.round(game.bonus_points, 2)], cutoff=CUTOFF)
+            render_boards(screen, game.get_boards(), labels=[game.score, np.round(game.bonus_points, 2), np.abs(next_move[:CUTOFF]).max(axis=1).round(2)], cutoff=CUTOFF)
             render_state(screen, state, offset=2)
             # render_progress(screen, lost_games)
             screen.refresh()
