@@ -206,9 +206,12 @@ class tetris_batch:
             TILES[self.tiles[indices], self.rotations[indices]],
             self.positions[indices]
         )
-        self.boards[lost, :-PADDING, PADDING:-PADDING] = 0
-        self.score[lost] = 0
+        self.reset_lost_boards(lost)
         return points, lost
+
+    def reset_lost_boards(self, indices):
+        self.boards[indices, :-PADDING, PADDING:-PADDING] = 0
+        self.score[indices] = 0
 
     def generate_new_tiles(self, indices):
         new_tiles_count = np.sum(indices)
@@ -232,22 +235,23 @@ class tetris_batch:
         self.positions[:, 1] = col + PADDING
         self.rotations = rot
 
-        # is_not_okay = test_multiple_tiles(self.boards, TILES[self.tiles, self.rotations % 4], self.positions)
-        # okay = np.logical_not(is_not_okay)
+        is_not_okay = test_multiple_tiles(self.boards, TILES[self.tiles, self.rotations % 4], self.positions)
+        okay = np.logical_not(is_not_okay)
 
-        # lost = np.zeros(self.batch_size, dtype=np.bool)
-        # lost[is_not_okay] = True
+        points = np.zeros(self.batch_size, dtype=np.int)
+        lost = np.zeros(self.batch_size, dtype=np.bool)
+        lost[is_not_okay] = True
 
-        # points = np.zeros(self.batch_size, dtype=np.int)
+        self.reset_lost_boards(is_not_okay)
 
-        moves = np.full(self.batch_size, DROP)
-        # moves[okay] = DROP
+        moves = np.full(self.batch_size, IDLE)
+        moves[okay] = DROP
 
         valid_points, valid_lost = self.make_moves(moves)
 
-        # points[okay] = valid_points[okay]
-        # lost[okay] = valid_lost[okay]
-        return valid_points, valid_lost
+        points[okay] = valid_points[okay]
+        lost[okay] = valid_lost[okay]
+        return points, lost
 
         # col = col + PADDING
         # max_moves = np.max(np.abs(col - self.positions[:, 1]))

@@ -187,8 +187,8 @@ def train(screen):
                 ('games played', lost_games),
                 ('bonus points', give_bonus_points),
                 ('moves per second', int(BATCH_SIZE / average_time)),
-                ('cleared lines per iteration', np.round(cleared_lines / iterations, 4)),
-                ('games lost per iteration', np.round(lost_games / iterations, 4)),
+                ('cleared lines per iteration', np.round(cleared_lines / iterations, 5)),
+                ('games lost per iteration', np.round(lost_games / iterations, 5)),
                 ('x', np.round(move[0], 4)),
             ], offset=4)
             # render_progress(screen, lost_games)
