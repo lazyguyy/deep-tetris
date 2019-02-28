@@ -82,7 +82,7 @@ def train(screen):
 
         random_move_probability = RANDOM_MOVE_BASE_PROBABILITY
         give_bonus_points = GIVE_BONUS_POINTS
-        probability_override = False
+        inference_mode = False
         game = tetris.tetris_batch(BATCH_SIZE)
 
         def bonus_points():
@@ -101,7 +101,7 @@ def train(screen):
             iterations += BATCH_SIZE
             start_time = time.time()
 
-            if not probability_override:
+            if not inference_mode:
                 random_move_probability = max(0.1, random_move_probability * RANDOM_MOVE_PROBABILITY_DECAY)
 
             old_depths = np.copy(game.depths)
@@ -114,7 +114,7 @@ def train(screen):
             # get target column and rotation
             best_index = np.argmax(move, axis=-1)
             # explore instead
-            if not probability_override and np.random.uniform(0, 1) < random_move_probability:
+            if not inference_mode and np.random.uniform(0, 1) < random_move_probability:
                 best_index = np.random.choice(4 * tetris.COLUMNS, BATCH_SIZE, True)
 
             col, rot = np.unravel_index(best_index, (tetris.COLUMNS, 4))
@@ -138,17 +138,18 @@ def train(screen):
             move[batch_indices, best_index] = update
 
             # update model
-            sess.run(model.optimizer, feed_dict={
-                model.feedback: move,
-                model.depths: old_depths,
-                model.tile_ids: old_tile_ids
-                })
+            if not inference_mode:
+                sess.run(model.optimizer, feed_dict={
+                    model.feedback: move,
+                    model.depths: old_depths,
+                    model.tile_ids: old_tile_ids
+                    })
 
             lost_games += np.sum(lost)
 
             ev = screen.get_key()
             if ev == ord('p'):
-                probability_override = not probability_override
+                inference_mode = not inference_mode
             elif ev == ord('+'):
                 random_move_probability += 0.01
             elif ev == ord('-'):
@@ -178,13 +179,12 @@ def train(screen):
 
             render_state(screen, [
                 ('random move probability', np.round(random_move_probability, 4)),
-                ('inference mode', probability_override),
+                ('inference mode', inference_mode),
                 ('games played', lost_games),
                 ('bonus points', give_bonus_points),
                 ('moves per second', int(BATCH_SIZE / average_time)),
-                # ('x', np.round(move_copy[0], 4)),
-                ('cleared_lines', np.round(cleared_lines / iterations, 4)),
-                ('lost / iterations', np.round(lost_games / iterations, 4)),
+                ('cleared lines per iteration', np.round(cleared_lines / iterations, 4)),
+                ('games lost per iteration', np.round(lost_games / iterations, 4)),
             ], offset=4)
             # render_progress(screen, lost_games)
             screen.refresh()
@@ -195,4 +195,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    ma
