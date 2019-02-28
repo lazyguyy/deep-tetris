@@ -9,7 +9,7 @@ import ntetris as tetris
 from asciimatics.screen import Screen
 
 
-BATCH_SIZE = 2**12
+BATCH_SIZE = 2**2
 LOSSES_PER_EPISODE = 2**4 * BATCH_SIZE
 PENALTY_PER_LOSS = -100
 EMA_FACTOR = 0.999
@@ -109,11 +109,11 @@ def train(screen):
 
             # get target column and rotation
             best_index = np.argmax(move, axis=-1)
+            # explore instead
             if not probability_override and np.random.uniform(0, 1) < random_move_probability:
                 best_index = np.random.choice(4 * tetris.COLUMNS, BATCH_SIZE, True)
             col, rot = np.unravel_index(best_index, (tetris.COLUMNS, 4))
 
-            # explore instead
             reward, lost = game.drop_in(col, rot)
             reward = reward.astype(np.float64)
             if give_bonus_points:
@@ -127,7 +127,8 @@ def train(screen):
             lost_game_penalty = np.where(lost, PENALTY_PER_LOSS, 0)
             update = lost_game_penalty + reward + EMA_FACTOR * np.max(next_move, axis=-1)
 
-            move[:, best_index] = update
+            batch_indices = np.arange(BATCH_SIZE)
+            move[batch_indices, best_index] = update
 
             # update model
             sess.run(model.optimizer, feed_dict={
@@ -159,14 +160,15 @@ def train(screen):
                 if ev == ord('q'):
                     return
 
+            render_boards(screen, game.unpadded_boards, labels=[
+                game.score,
+                np.round(update, 2),
+                np.abs(next_move).max(axis=1).round(4)
+            ], cutoff=CUTOFF)
+
             end_time = time.time()
             average_time = 0.7 * average_time + 0.3 * (end_time - start_time)
 
-            render_boards(screen, game.unpadded_boards, labels=[
-                game.score,
-                np.round(bonus_points(), 4),
-                np.abs(next_move).max(axis=1).round(4)
-            ], cutoff=CUTOFF)
             render_state(screen, [
                 ('random move probability', np.round(random_move_probability, 4)),
                 ('inference mode', probability_override),
