@@ -8,11 +8,12 @@ def _make_network(depths, tile_id):
     normalized_depths = tf.layers.batch_normalization(depths, training=True)
 
     input_layer = tf.concat([one_hot_tile_id, normalized_depths], axis=-1)
+
     hidden_layer = tf.layers.dense(input_layer, 128, activation=tf.nn.relu, use_bias=True)
+    normalize_hidden = tf.layers.batch_normalization(hidden_layer, training=True)
 
-    output = tf.layers.dense(hidden_layer, 4 * tetris.COLUMNS, use_bias=False)
-
-    return tf.nn.softmax(output)
+    output = tf.layers.dense(normalize_hidden, 4 * tetris.COLUMNS, use_bias=False)
+    return output
 
 def _make_loss(output, modified_output):
     loss = tf.reduce_mean(tf.square(output - modified_output))
@@ -31,5 +32,5 @@ class depths_network:
         self.output = _make_network(self.depths, self.tile_ids)
 
         self.loss = _make_loss(self.output, self.feedback)
-        self.optimizer = tf.train.GradientDescentOptimizer(1e-5).minimize(self.loss)
+        self.optimizer = tf.train.GradientDescentOptimizer(1e-4).minimize(self.loss)
 

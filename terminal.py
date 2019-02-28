@@ -9,7 +9,7 @@ import ntetris as tetris
 from asciimatics.screen import Screen
 
 
-BATCH_SIZE = 2**2
+BATCH_SIZE = 2**12
 LOSSES_PER_EPISODE = 2**4 * BATCH_SIZE
 PENALTY_PER_LOSS = -100
 EMA_FACTOR = 0.999
@@ -94,9 +94,13 @@ def train(screen):
         screen.clear()
 
         lost_games = 0
+        cleared_lines = 0
+        iterations = 0
         average_time = 0
         while ...:
+            iterations += BATCH_SIZE
             start_time = time.time()
+
             if not probability_override:
                 random_move_probability = max(0.1, random_move_probability * RANDOM_MOVE_PROBABILITY_DECAY)
 
@@ -112,9 +116,11 @@ def train(screen):
             # explore instead
             if not probability_override and np.random.uniform(0, 1) < random_move_probability:
                 best_index = np.random.choice(4 * tetris.COLUMNS, BATCH_SIZE, True)
+
             col, rot = np.unravel_index(best_index, (tetris.COLUMNS, 4))
 
             reward, lost = game.drop_in(col, rot)
+            cleared_lines += np.sum(reward)
             reward = reward.astype(np.float64)
             if give_bonus_points:
                 reward += bonus_points()
@@ -128,6 +134,7 @@ def train(screen):
             update = lost_game_penalty + reward + EMA_FACTOR * np.max(next_move, axis=-1)
 
             batch_indices = np.arange(BATCH_SIZE)
+            move_copy = np.copy(move) # XXX
             move[batch_indices, best_index] = update
 
             # update model
@@ -163,7 +170,7 @@ def train(screen):
             render_boards(screen, game.unpadded_boards, labels=[
                 game.score,
                 np.round(update, 2),
-                np.abs(next_move).max(axis=1).round(4)
+                np.abs(next_move).max(axis=1).round(4),
             ], cutoff=CUTOFF)
 
             end_time = time.time()
@@ -175,6 +182,9 @@ def train(screen):
                 ('games played', lost_games),
                 ('bonus points', give_bonus_points),
                 ('moves per second', int(BATCH_SIZE / average_time)),
+                ('x', np.round(move_copy[0], 4)),
+                ('cleared_lines', np.round(cleared_lines / iterations, 4)),
+                ('lost / iterations', np.round(lost_games / iterations, 4)),
             ], offset=4)
             # render_progress(screen, lost_games)
             screen.refresh()

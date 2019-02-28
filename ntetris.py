@@ -39,7 +39,7 @@ TILES = np.array([
      [[0, 0, 7, 0], [0, 0, 7, 0], [0, 0, 7, 0], [0, 0, 7, 0]]]
 ], dtype=np.int32)
 
-NUM_TILES = TILES.shape[0]
+NUM_TILES = 1 # XXX TILES.shape[0]
 TILE_SIZE = TILES.shape[-1]
 
 # get the tiles indexed by positions
@@ -132,7 +132,7 @@ def clear_multiple_boards(boards):
     new_boards = filled[boards_indices, rows_indices, columns_indices]
     np.copyto(boards, new_boards)
     # return score
-    return 5 * (boards.shape[1] - np.sum(keep, axis=1)) ** 2
+    return boards.shape[1] - np.sum(keep, axis=1)
 
 
 MOVE_LEFT = 0
