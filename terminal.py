@@ -9,7 +9,7 @@ import ntetris as tetris
 from asciimatics.screen import Screen
 
 
-BATCH_SIZE = 2**11
+BATCH_SIZE = 2**12
 LOSSES_PER_EPISODE = 2**4 * BATCH_SIZE
 PENALTY_PER_LOSS = -100
 EMA_FACTOR = 0.999
@@ -90,6 +90,9 @@ def train(screen):
             density_points = (1 + (depths * tetris.COLUMNS - (game.boards[:, :-tetris.PADDING, tetris.PADDING:-tetris.PADDING] == 0).sum(axis=(1, 2))) / (tetris.COLUMNS * tetris.ROWS))
             return depths * density_points
 
+
+        screen.clear()
+
         lost_games = 0
         average_time = 0
         while ...:
@@ -111,7 +114,6 @@ def train(screen):
             col, rot = np.unravel_index(best_index, (tetris.COLUMNS, 4))
 
             # explore instead
-
             reward, lost = game.drop_in(col, rot)
             reward = reward.astype(np.float64)
             if give_bonus_points:
@@ -156,8 +158,6 @@ def train(screen):
                 saver.save(sess, SAVE_PATH)
                 if ev == ord('q'):
                     return
-
-            render_boards(screen, game.unpadded_boards, labels=[game.score, np.round(update, 2), np.abs(next_move[:CUTOFF]).max(axis=1).round(2)], cutoff=CUTOFF)
 
             end_time = time.time()
             average_time = 0.7 * average_time + 0.3 * (end_time - start_time)

@@ -31,5 +31,5 @@ class depths_network:
         self.output = _make_network(self.depths, self.tile_ids)
 
         self.loss = _make_loss(self.output, self.feedback)
-        self.optimizer = tf.train.GradientDescentOptimizer(1e-4).minimize(self.loss)
+        self.optimizer = tf.train.GradientDescentOptimizer(1e-5).minimize(self.loss)
 
