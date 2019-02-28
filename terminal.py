@@ -9,8 +9,7 @@ import ntetris as tetris
 from asciimatics.screen import Screen
 
 
-BATCH_SIZE = 2**14
-LOSSES_PER_EPISODE = 2**4 * BATCH_SIZE
+BATCH_SIZE = 2**13
 PENALTY_PER_LOSS = -1
 EMA_FACTOR = 0.999
 RANDOM_MOVE_BASE_PROBABILITY = 1
@@ -163,8 +162,15 @@ def train(screen):
                 game_state = pickle.load(open(SAVE_PATH + "state", "rb"))
                 lost_games = game_state["games"]
                 random_move_probability = game_state["probability"]
+                average_losses = game_state["average_losses"]
+                average_clears = game_state["average_clears"]
             elif ev in (ord('q'), ord('s')):
-                game_state = {"games": lost_games, "probability": random_move_probability}
+                game_state = {
+                    "games": lost_games,
+                    "probability": random_move_probability,
+                    "average_losses": average_losses,
+                    "average_clears": average_clears,
+                    }
                 pickle.dump(game_state, open(SAVE_PATH + "state", "wb"))
                 saver.save(sess, SAVE_PATH)
                 if ev == ord('q'):
@@ -177,7 +183,7 @@ def train(screen):
             ], cutoff=CUTOFF)
 
             end_time = time.time()
-            average_time = MEASUREMENT_EMA * average_time + (1 - MEASUREMENT_EMA) * (end_time - start_time)
+            average_time   = MEASUREMENT_EMA * average_time   + (1 - MEASUREMENT_EMA) * (end_time - start_time)
             average_clears = MEASUREMENT_EMA * average_clears + (1 - MEASUREMENT_EMA) * cleared_lines
             average_losses = MEASUREMENT_EMA * average_losses + (1 - MEASUREMENT_EMA) * np.sum(lost)
 
@@ -187,8 +193,8 @@ def train(screen):
                 ('games played', lost_games),
                 ('bonus points', give_bonus_points),
                 ('moves per second', int(BATCH_SIZE / average_time)),
-                ('cleared lines per iteration', np.round(cleared_lines / iterations, 5)),
-                ('games lost per iteration', np.round(lost_games / iterations, 5)),
+                ('cleared lines per iteration', np.round(average_clears / BATCH_SIZE, 5)),
+                ('games lost per iteration', np.round(average_losses / BATCH_SIZE, 5)),
                 ('x', np.round(move[0], 4)),
             ], offset=4)
             # render_progress(screen, lost_games)
