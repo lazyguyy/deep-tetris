@@ -9,13 +9,13 @@ import ntetris as tetris
 from asciimatics.screen import Screen
 
 
-BATCH_SIZE = 2**12
+BATCH_SIZE = 2**14
 LOSSES_PER_EPISODE = 2**4 * BATCH_SIZE
 PENALTY_PER_LOSS = -1
 EMA_FACTOR = 0.999
 RANDOM_MOVE_BASE_PROBABILITY = 1
-RANDOM_MOVE_PROBABILITY_DECAY = 0.9999
 MEASUREMENT_EMA = 0.7
+RANDOM_MOVE_PROBABILITY_DECAY = 0.999
 BOARD_SPACING = 1
 LABEL_WIDTH = 20
 CUTOFF = 8
@@ -189,6 +189,7 @@ def train(screen):
                 ('moves per second', int(BATCH_SIZE / average_time)),
                 ('cleared lines per iteration', np.round(cleared_lines / iterations, 4)),
                 ('games lost per iteration', np.round(lost_games / iterations, 4)),
+                ('x', np.round(move[0], 4)),
             ], offset=4)
             # render_progress(screen, lost_games)
             screen.refresh()
@@ -199,4 +200,4 @@ def main():
 
 
 if __name__ == '__main__':
-    ma
+    main()

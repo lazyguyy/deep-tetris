@@ -229,23 +229,43 @@ class tetris_batch:
         return points, lost
 
     def drop_in(self, col, rot):
-        col = col + PADDING
-        max_moves = np.max(np.abs(col - self.positions[:, 1]))
+        self.positions[:, 1] = col + PADDING
+        self.rotations = rot
 
-        for _ in range(max_moves):
-            moves = np.full(self.batch_size, IDLE, dtype=np.int)
-            moves[self.positions[:, 1] < col] = MOVE_RIGHT
-            moves[self.positions[:, 1] > col] = MOVE_LEFT
-            self.make_moves(moves)
+        # is_not_okay = test_multiple_tiles(self.boards, TILES[self.tiles, self.rotations % 4], self.positions)
+        # okay = np.logical_not(is_not_okay)
 
-        for _ in range(3):
-            moves = np.full(self.batch_size, IDLE, dtype=np.int)
-            moves[self.rotations % 4 != rot % 4] = ROTATE
-            self.make_moves(moves)
+        # lost = np.zeros(self.batch_size, dtype=np.bool)
+        # lost[is_not_okay] = True
 
-        moves = np.full(self.batch_size, DROP, dtype=np.int)
-        points, lost = self.make_moves(moves)
-        return points, lost
+        # points = np.zeros(self.batch_size, dtype=np.int)
+
+        moves = np.full(self.batch_size, DROP)
+        # moves[okay] = DROP
+
+        valid_points, valid_lost = self.make_moves(moves)
+
+        # points[okay] = valid_points[okay]
+        # lost[okay] = valid_lost[okay]
+        return valid_points, valid_lost
+
+        # col = col + PADDING
+        # max_moves = np.max(np.abs(col - self.positions[:, 1]))
+
+        # for _ in range(max_moves):
+        #     moves = np.full(self.batch_size, IDLE, dtype=np.int)
+        #     moves[self.positions[:, 1] < col] = MOVE_RIGHT
+        #     moves[self.positions[:, 1] > col] = MOVE_LEFT
+        #     self.make_moves(moves)
+
+        # for _ in range(3):
+        #     moves = np.full(self.batch_size, IDLE, dtype=np.int)
+        #     moves[self.rotations % 4 != rot % 4] = ROTATE
+        #     self.make_moves(moves)
+
+        # moves = np.full(self.batch_size, DROP, dtype=np.int)
+        # points, lost = self.make_moves(moves)
+        # return points, lost
 
     @property
     def unpadded_boards(self):
