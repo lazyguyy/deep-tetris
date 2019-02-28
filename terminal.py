@@ -106,11 +106,11 @@ def train(screen):
 
             # get target column and rotation
             best_index = np.argmax(move, axis=-1)
+            # explore instead
             if not probability_override and np.random.uniform(0, 1) < random_move_probability:
                 best_index = np.random.choice(4 * tetris.COLUMNS, BATCH_SIZE, True)
             col, rot = np.unravel_index(best_index, (tetris.COLUMNS, 4))
 
-            # explore instead
 
             reward, lost = game.drop_in(col, rot)
             reward = reward.astype(np.float64)
@@ -157,16 +157,15 @@ def train(screen):
                 if ev == ord('q'):
                     return
 
-            render_boards(screen, game.unpadded_boards, labels=[game.score, np.round(update, 2), np.abs(next_move[:CUTOFF]).max(axis=1).round(2)], cutoff=CUTOFF)
+            render_boards(screen, game.unpadded_boards, labels=[
+                game.score,
+                np.round(update, 2),
+                np.abs(next_move).max(axis=1).round(4)
+            ], cutoff=CUTOFF)
 
             end_time = time.time()
             average_time = 0.7 * average_time + 0.3 * (end_time - start_time)
 
-            render_boards(screen, game.unpadded_boards, labels=[
-                game.score,
-                np.round(bonus_points(), 4),
-                np.abs(next_move).max(axis=1).round(4)
-            ], cutoff=CUTOFF)
             render_state(screen, [
                 ('random move probability', np.round(random_move_probability, 4)),
                 ('inference mode', probability_override),
