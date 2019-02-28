@@ -11,7 +11,7 @@ from asciimatics.screen import Screen
 
 BATCH_SIZE = 2**12
 LOSSES_PER_EPISODE = 2**4 * BATCH_SIZE
-PENALTY_PER_LOSS = -100
+PENALTY_PER_LOSS = -1
 EMA_FACTOR = 0.999
 RANDOM_MOVE_BASE_PROBABILITY = 1
 RANDOM_MOVE_PROBABILITY_DECAY = 0.9999
@@ -19,7 +19,7 @@ RANDOM_MOVE_PROBABILITY_DECAY = 0.9999
 BOARD_SPACING = 1
 LABEL_WIDTH = 20
 CUTOFF = 8
-GIVE_BONUS_POINTS = True
+GIVE_BONUS_POINTS = False
 SAVE_PATH = "./model/model"
 MAX_VALUE_WIDTH = 20
 
@@ -121,7 +121,7 @@ def train(screen):
 
             reward, lost = game.drop_in(col, rot)
             cleared_lines += np.sum(reward)
-            reward = reward.astype(np.float64)
+            reward = 2 * reward.astype(np.float64)
             if give_bonus_points:
                 reward += bonus_points()
 
@@ -182,7 +182,7 @@ def train(screen):
                 ('games played', lost_games),
                 ('bonus points', give_bonus_points),
                 ('moves per second', int(BATCH_SIZE / average_time)),
-                ('x', np.round(move_copy[0], 4)),
+                # ('x', np.round(move_copy[0], 4)),
                 ('cleared_lines', np.round(cleared_lines / iterations, 4)),
                 ('lost / iterations', np.round(lost_games / iterations, 4)),
             ], offset=4)
