@@ -9,7 +9,7 @@ import ntetris as tetris
 from asciimatics.screen import Screen
 
 
-BATCH_SIZE = 2**11
+BATCH_SIZE = 2**2
 LOSSES_PER_EPISODE = 2**4 * BATCH_SIZE
 PENALTY_PER_LOSS = -100
 EMA_FACTOR = 0.999
@@ -125,7 +125,8 @@ def train(screen):
             lost_game_penalty = np.where(lost, PENALTY_PER_LOSS, 0)
             update = lost_game_penalty + reward + EMA_FACTOR * np.max(next_move, axis=-1)
 
-            move[:, best_index] = update
+            batch_indices = np.arange(BATCH_SIZE)
+            move[batch_indices, best_index] = update
 
             # update model
             sess.run(model.optimizer, feed_dict={
