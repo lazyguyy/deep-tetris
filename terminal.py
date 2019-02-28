@@ -13,8 +13,8 @@ BATCH_SIZE = 2**14
 PENALTY_PER_LOSS = -1
 EMA_FACTOR = 0.999
 RANDOM_MOVE_BASE_PROBABILITY = 1
+RANDOM_MOVE_PROBABILITY_DECAY = 0.9999
 MEASUREMENT_EMA = 0.9
-RANDOM_MOVE_PROBABILITY_DECAY = 0.999
 BOARD_SPACING = 1
 LABEL_WIDTH = 20
 CUTOFF = 8
@@ -89,7 +89,6 @@ def train(screen):
             density_points = (1 + (depths * tetris.COLUMNS - (game.boards[:, :-tetris.PADDING, tetris.PADDING:-tetris.PADDING] == 0).sum(axis=(1, 2))) / (tetris.COLUMNS * tetris.ROWS))
             return depths * density_points
 
-
         screen.clear()
 
         lost_games = 0
@@ -135,7 +134,6 @@ def train(screen):
             update = lost_game_penalty + reward + EMA_FACTOR * np.max(next_move, axis=-1)
 
             batch_indices = np.arange(BATCH_SIZE)
-            move_copy = np.copy(move) # XXX
             move[batch_indices, best_index] = update
 
             # update model

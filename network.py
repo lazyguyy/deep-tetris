@@ -18,18 +18,23 @@ dtype = tf.float64
 #     output = tf.layers.dense(hidden_with_depths, 4 * tetris.COLUMNS, use_bias=False)
 #     return output
 
-def _make_network(depths, tile_id):
+def _make_depths_network(depths, tile_id):
     one_hot_tile_id = tf.one_hot(tile_id, tetris.NUM_TILES, dtype=dtype)
     normalized_depths = depths / tetris.ROWS - 0.5
     relative_depths = depths - tf.reduce_max(depths, axis=1, keep_dims=True)
     concat_depths = tf.concat([normalized_depths, relative_depths], axis=-1)
-    concat_depths = relative_depths
 
     hidden_layer = tf.layers.dense(concat_depths, 128, activation=tf.nn.relu, use_bias=True)
     hidden_layer = tf.concat([hidden_layer, concat_depths], axis=-1)
     hidden_layer = tf.layers.dense(hidden_layer, tetris.COLUMNS * 4, use_bias=True)
 
     return hidden_layer
+
+
+def _make_conv_network(board):
+
+
+    return ...
 
 
 def _make_loss(output, modified_output):
@@ -46,7 +51,7 @@ class depths_network:
         self.tile_ids = tf.placeholder(shape=(None,), dtype=tf.int32, name="tile_ids")
         self.feedback = tf.placeholder(shape=(None, tetris.COLUMNS * 4), dtype=dtype, name="modified_output")
 
-        self.output = _make_network(self.depths, self.tile_ids)
+        self.output = _make_depths_network(self.depths, self.tile_ids)
 
         self.loss = _make_loss(self.output, self.feedback)
         # self.optimizer = tf.train.MomentumOptimizer(1e-2, 0.9).minimize(self.loss)
