@@ -15,7 +15,7 @@ PENALTY_PER_LOSS = -1
 EMA_FACTOR = 0.999
 RANDOM_MOVE_BASE_PROBABILITY = 1
 RANDOM_MOVE_PROBABILITY_DECAY = 0.9999
-
+MEASUREMENT_EMA = 0.7
 BOARD_SPACING = 1
 LABEL_WIDTH = 20
 CUTOFF = 8
@@ -94,9 +94,11 @@ def train(screen):
         screen.clear()
 
         lost_games = 0
-        cleared_lines = 0
         iterations = 0
+
         average_time = 0
+        average_clears = 0
+        average_losses = 0
         while ...:
             iterations += BATCH_SIZE
             start_time = time.time()
@@ -120,7 +122,7 @@ def train(screen):
             col, rot = np.unravel_index(best_index, (tetris.COLUMNS, 4))
 
             reward, lost = game.drop_in(col, rot)
-            cleared_lines += np.sum(reward)
+            cleared_lines = np.sum(reward)
             reward = 2 * reward.astype(np.float64)
             if give_bonus_points:
                 reward += bonus_points()
@@ -174,7 +176,9 @@ def train(screen):
             ], cutoff=CUTOFF)
 
             end_time = time.time()
-            average_time = 0.7 * average_time + 0.3 * (end_time - start_time)
+            average_time = MEASUREMENT_EMA * average_time + (1 - MEASUREMENT_EMA) * (end_time - start_time)
+            average_clears = MEASUREMENT_EMA * average_clears + (1 - MEASUREMENT_EMA) * cleared_lines
+            average_losses = MEASUREMENT_EMA * average_losses + (1 - MEASUREMENT_EMA) * np.sum(lost)
 
             render_state(screen, [
                 ('random move probability', np.round(random_move_probability, 4)),
