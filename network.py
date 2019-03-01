@@ -29,9 +29,12 @@ def _make_depths_network(depths, tile_id):
 
     hidden_layer = tf.layers.dense(concat_depths, 128, activation=tf.nn.relu, use_bias=True)
     hidden_layer = tf.concat([hidden_layer, concat_depths], axis=-1)
-    hidden_layer = tf.layers.dense(hidden_layer, DROPPABLE_COLUMNS * 4, use_bias=True)
 
-    return hidden_layer
+    hidden_layer = tf.layers.dense(hidden_layer, 128, activation=tf.nn.relu, use_bias=True)
+    hidden_layer = tf.concat([hidden_layer, concat_depths], axis=-1)
+
+    output_layer = tf.layers.dense(hidden_layer, DROPPABLE_COLUMNS * 4, use_bias=True)
+    return output_layer
 
 
 def _make_conv_network(board):

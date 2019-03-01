@@ -14,13 +14,14 @@ PENALTY_PER_LOSS = -1
 EMA_FACTOR = 0.9
 RANDOM_MOVE_BASE_PROBABILITY = 1
 RANDOM_MOVE_PROBABILITY_DECAY = 0.9999
-MEASUREMENT_EMA = 0.9
+MEASUREMENT_EMA = 0.99
 BOARD_SPACING = 1
 LABEL_WIDTH = 20
 CUTOFF = 8
 GIVE_BONUS_POINTS = False
 SAVE_PATH = "./model/model"
 MAX_VALUE_WIDTH = 20
+REWARD_MULTIPLIER = 10
 
 LOST_GAME_SCREEN = (
 ["|          |"] * 8 +
@@ -137,7 +138,7 @@ def train(screen):
 
             reward, lost = game.drop_in(col, rot)
             cleared_lines = np.sum(reward)
-            reward = 2 * reward.astype(np.float64)
+            reward = REWARD_MULTIPLIER * reward.astype(np.float64)
             if give_bonus_points:
                 reward += bonus_points()
 
