@@ -98,7 +98,8 @@ class TetrisApp(App):
             })
 
         best_index = np.argmax(move, axis=1)
-        col, rot = np.unravel_index(best_index, (tetris.COLUMNS, 4))
+        col, rot = np.unravel_index(best_index, (network.DROPPABLE_COLUMNS, 4))
+        col -= network.COLUMN_OFFSET
         self.game.drop_in(col, rot)
 
         self.renderer.show_board(self.game.unpadded_boards[0])
