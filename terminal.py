@@ -13,7 +13,7 @@ BATCH_SIZE = 2**14
 PENALTY_PER_LOSS = -1
 EMA_FACTOR = 0.9
 RANDOM_MOVE_BASE_PROBABILITY = 1
-RANDOM_MOVE_PROBABILITY_DECAY = 0.9999
+RANDOM_MOVE_PROBABILITY_DECAY = 0.999
 MEASUREMENT_EMA = 0.9
 BOARD_SPACING = 1
 LABEL_WIDTH = 20
@@ -138,10 +138,17 @@ def train(screen):
 
             # update model
             if not inference_mode:
+                # sess.run(model.optimizer, feed_dict={
+                #     model.feedback: move,
+                #     model.depths: old_depths,
+                #     model.tile_ids: old_tile_ids
+                #     })
+                # print(points.shape)
                 sess.run(model.optimizer, feed_dict={
-                    model.feedback: move,
+                    model.score: reward,
+                    model.action: best_index,
                     model.depths: old_depths,
-                    model.tile_ids: old_tile_ids
+                    model.tile_ids: old_tile_ids,
                     })
 
             lost_games += np.sum(lost)

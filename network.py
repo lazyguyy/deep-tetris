@@ -38,22 +38,32 @@ def _make_conv_network(board):
 
 
 def _make_loss(output, modified_output):
+    # output = (BATCH, 4 * Columns)
     loss = tf.reduce_mean(tf.square(output - modified_output))
+    return loss
+
+def _make_policy_loss(output, score, action):
+    output = tf.nn.softmax(output)
+    one_hot_action = tf.one_hot(action, 4 * tetris.COLUMNS)
+    loss = -score * tf.log(tf.boolean_mask(output, one_hot_action) + 1e-5)
     return loss
 
 
 class depths_network:
 
-    __slots__ = 'depths', 'tile_ids', 'feedback', 'output', 'loss', 'optimizer'
+    __slots__ = 'depths', 'tile_ids', 'feedback', 'output', 'loss', 'optimizer', 'score', 'action', 'policy_loss'
 
     def __init__(self):
         self.depths = tf.placeholder(shape=(None, tetris.COLUMNS), dtype=dtype, name="depths")
         self.tile_ids = tf.placeholder(shape=(None,), dtype=tf.int32, name="tile_ids")
         self.feedback = tf.placeholder(shape=(None, tetris.COLUMNS * 4), dtype=dtype, name="modified_output")
+        self.score = tf.placeholder(shape=(None,), dtype=dtype, name="score")
+        self.action = tf.placeholder(shape=(None,), dtype=tf.int32, name="action")
 
         self.output = _make_depths_network(self.depths, self.tile_ids)
 
         self.loss = _make_loss(self.output, self.feedback)
+        self.policy_loss = _make_policy_loss(self.output, self.score, self.action)
         # self.optimizer = tf.train.MomentumOptimizer(1e-2, 0.9).minimize(self.loss)
-        self.optimizer = tf.train.AdamOptimizer(1e-4).minimize(self.loss)
+        self.optimizer = tf.train.AdamOptimizer(1e-4).minimize(self.policy_loss)
 
