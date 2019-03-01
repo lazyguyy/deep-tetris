@@ -22,13 +22,26 @@ GIVE_BONUS_POINTS = False
 SAVE_PATH = "./model/model"
 MAX_VALUE_WIDTH = 20
 
-def render_boards(screen, boards, labels=None, cutoff=1, offset=0):
+LOST_GAME_SCREEN = ["|          |"] * 8 +\
+[
+ "| ######## ",
+ "| # GAME # ",
+ "| # OVER # ",
+ "| ######## ",
+] +\
+["|          |"] * 8
+LOST_GAME_SCREEN = list(LOST_GAME_SCREEN)
+
+def render_boards(screen, boards, lost, labels=None, cutoff=1, offset=0):
     def to_chr(num):
         return ' ' if not num else str(num)
 
     for y in range(boards.shape[1]):
         for x in range(min(boards.shape[0], cutoff)):
-            line = '|' + ''.join(to_chr(n) for n in boards[x, y]) + '|'
+            if lost[x]:
+                line = LOST_GAME_SCREEN[y]
+            else:
+                line = '|' + ''.join(to_chr(n) for n in boards[x, y]) + '|'
             screen.print_at(
                 line,
                 x=x * (tetris.COLUMNS + BOARD_SPACING + 2),
@@ -182,7 +195,7 @@ def train(screen):
                 if ev == ord('q'):
                     return
 
-            render_boards(screen, game.unpadded_boards, labels=[
+            render_boards(screen, game.unpadded_boards, lost, labels=[
                 game.score,
                 np.round(update, 2),
                 np.abs(next_move).max(axis=1).round(4),

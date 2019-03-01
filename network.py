@@ -25,7 +25,7 @@ def _make_depths_network(depths, tile_id):
     one_hot_tile_id = tf.one_hot(tile_id, tetris.NUM_TILES, dtype=dtype)
     normalized_depths = depths / tetris.ROWS - 0.5
     relative_depths = depths - tf.reduce_max(depths, axis=1, keep_dims=True)
-    concat_depths = tf.concat([normalized_depths, relative_depths], axis=-1)
+    concat_depths = tf.concat([normalized_depths, relative_depths, one_hot_tile_id], axis=-1)
 
     hidden_layer = tf.layers.dense(concat_depths, 128, activation=tf.nn.relu, use_bias=True)
     hidden_layer = tf.concat([hidden_layer, concat_depths], axis=-1)
