@@ -22,14 +22,16 @@ GIVE_BONUS_POINTS = False
 SAVE_PATH = "./model/model"
 MAX_VALUE_WIDTH = 20
 
-LOST_GAME_SCREEN = ["|          |"] * 8 +\
+LOST_GAME_SCREEN = (
+["|          |"] * 8 +
 [
  "| ######## ",
  "| # GAME # ",
  "| # OVER # ",
  "| ######## ",
-] +\
+] +
 ["|          |"] * 8
+)
 LOST_GAME_SCREEN = list(LOST_GAME_SCREEN)
 
 def render_boards(screen, boards, lost, labels=None, cutoff=1, offset=0):

@@ -39,7 +39,7 @@ TILES = np.array([
      [[0, 6, 0, 0], [6, 6, 0, 0], [0, 6, 0, 0], [0, 0, 0, 0]]],
 ], dtype=np.int32)
 
-NUM_TILES = 7# TILES.shape[0]
+NUM_TILES = 2# TILES.shape[0]
 TILE_SIZE = TILES.shape[-1]
 PADDING = TILE_SIZE - 1
 
