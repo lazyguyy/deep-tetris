@@ -115,9 +115,10 @@ def train(screen):
             best_index = np.argmax(move, axis=-1)
             # explore instead
             if not inference_mode and np.random.uniform(0, 1) < random_move_probability:
-                best_index = np.random.choice(4 * tetris.COLUMNS, BATCH_SIZE, True)
+                best_index = np.random.choice(4 * network.DROPPABLE_COLUMNS, BATCH_SIZE, True)
 
-            col, rot = np.unravel_index(best_index, (tetris.COLUMNS, 4))
+            col, rot = np.unravel_index(best_index, (network.DROPPABLE_COLUMNS, 4))
+            col -= network.COLUMN_OFFSET
 
             reward, lost = game.drop_in(col, rot)
             cleared_lines = np.sum(reward)
@@ -200,7 +201,7 @@ def train(screen):
                 ('moves per second', int(BATCH_SIZE / average_time)),
                 ('cleared lines per iteration', np.round(average_clears / BATCH_SIZE, 5)),
                 ('games lost per iteration', np.round(average_losses / BATCH_SIZE, 5)),
-                ('x', np.round(move[0], 4)),
+                # ('x', np.round(move[0], 4)),
             ], offset=4)
             # render_progress(screen, lost_games)
             screen.refresh()

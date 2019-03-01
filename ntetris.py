@@ -41,6 +41,7 @@ TILES = np.array([
 
 NUM_TILES = 1 # XXX TILES.shape[0]
 TILE_SIZE = TILES.shape[-1]
+PADDING = TILE_SIZE - 1
 
 # get the tiles indexed by positions
 def make_indices(positions):
@@ -140,8 +141,6 @@ MOVE_RIGHT = 1
 ROTATE = 2
 DROP = 3
 IDLE = 4
-
-PADDING = TILE_SIZE - 1
 
 class tetris_batch:
     def __init__(self, batch_size):
@@ -252,24 +251,6 @@ class tetris_batch:
         points[okay] = valid_points[okay]
         lost[okay] = valid_lost[okay]
         return points, lost
-
-        # col = col + PADDING
-        # max_moves = np.max(np.abs(col - self.positions[:, 1]))
-
-        # for _ in range(max_moves):
-        #     moves = np.full(self.batch_size, IDLE, dtype=np.int)
-        #     moves[self.positions[:, 1] < col] = MOVE_RIGHT
-        #     moves[self.positions[:, 1] > col] = MOVE_LEFT
-        #     self.make_moves(moves)
-
-        # for _ in range(3):
-        #     moves = np.full(self.batch_size, IDLE, dtype=np.int)
-        #     moves[self.rotations % 4 != rot % 4] = ROTATE
-        #     self.make_moves(moves)
-
-        # moves = np.full(self.batch_size, DROP, dtype=np.int)
-        # points, lost = self.make_moves(moves)
-        # return points, lost
 
     @property
     def unpadded_boards(self):

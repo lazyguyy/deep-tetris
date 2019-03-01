@@ -3,6 +3,9 @@ import ntetris as tetris
 
 dtype = tf.float64
 
+COLUMN_OFFSET = tetris.PADDING
+DROPPABLE_COLUMNS = tetris.COLUMNS + COLUMN_OFFSET
+
 # def _make_network(depths, tile_id):
 #     one_hot_tile_id = tf.one_hot(tile_id, tetris.NUM_TILES, dtype=dtype)
 #     # normalized_depths = tf.layers.batch_normalization(depths, training=True)
@@ -26,7 +29,7 @@ def _make_depths_network(depths, tile_id):
 
     hidden_layer = tf.layers.dense(concat_depths, 128, activation=tf.nn.relu, use_bias=True)
     hidden_layer = tf.concat([hidden_layer, concat_depths], axis=-1)
-    hidden_layer = tf.layers.dense(hidden_layer, tetris.COLUMNS * 4, use_bias=True)
+    hidden_layer = tf.layers.dense(hidden_layer, DROPPABLE_COLUMNS * 4, use_bias=True)
 
     return hidden_layer
 
@@ -44,7 +47,7 @@ def _make_loss(output, modified_output):
 
 def _make_policy_loss(output, score, action):
     output = tf.nn.softmax(output)
-    one_hot_action = tf.one_hot(action, 4 * tetris.COLUMNS)
+    one_hot_action = tf.one_hot(action, 4 * DROPPABLE_COLUMNS)
     loss = -score * tf.log(tf.boolean_mask(output, one_hot_action) + 1e-5)
     return loss
 
@@ -56,7 +59,7 @@ class depths_network:
     def __init__(self):
         self.depths = tf.placeholder(shape=(None, tetris.COLUMNS), dtype=dtype, name="depths")
         self.tile_ids = tf.placeholder(shape=(None,), dtype=tf.int32, name="tile_ids")
-        self.feedback = tf.placeholder(shape=(None, tetris.COLUMNS * 4), dtype=dtype, name="modified_output")
+        self.feedback = tf.placeholder(shape=(None, DROPPABLE_COLUMNS * 4), dtype=dtype, name="modified_output")
         self.score = tf.placeholder(shape=(None,), dtype=dtype, name="score")
         self.action = tf.placeholder(shape=(None,), dtype=tf.int32, name="action")
 
