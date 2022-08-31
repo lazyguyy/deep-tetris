@@ -1,13 +1,12 @@
 import tensorflow as tf
 import numpy as np
-import network
+import new_network
 import pickle
 import time
+import torch.optim as optim
 import ntetris as tetris
 
-
 from asciimatics.screen import Screen
-
 
 BATCH_SIZE = 2**14
 PENALTY_PER_LOSS = -1
@@ -22,6 +21,8 @@ GIVE_BONUS_POINTS = False
 SAVE_PATH = "./model/model"
 MAX_VALUE_WIDTH = 20
 REWARD_MULTIPLIER = 10
+LEARNING_RATE = 1
+GAMMA = 0.9
 
 LOST_GAME_SCREEN = (
 ["|          |"] * 8 +
@@ -87,6 +88,49 @@ def render_progress(screen, current, total, offset=0):
 
     label = f'{current}/{total}'
     screen.print_at(bar + f'{label:<{label_width}}', x=0, y=height - 1 - offset)
+
+def new_train(screen):
+    model = new_network.depths_network().to(device)
+    optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
+
+    random_move_probability = RANDOM_MOVE_BASE_PROBABILITY
+    give_bonus_points = GIVE_BONUS_POINTS
+    inference_mode = False
+    game = tetris.tetris_batch(BATCH_SIZE)
+
+    screen.clear()
+    lost_games = 0
+    iterations = 0
+
+    average_time = 0
+    average_clears = 0
+    average_losses = 0
+    while ...:
+        iterations += BATCH_SIZE
+        start_time = time.time()
+
+        if not inference_mode:
+            random_move_probability = max(0.1, random_move_probability * RANDOM_MOVE_PROBABILITY_DECAY)
+
+        old_depths = np.copy(game.depths)
+        old_tile_ids = np.copy(game.tiles)
+        move = model(old_depths, old_tile_ids)
+
+        # fingers crossed this works
+        move = move.detach().cpu().numpy()
+
+        # get target column and rotation
+        best_index = np.argmax(move, axis=-1)
+        # explore instead
+        if not inference_mode and np.random.uniform(0, 1) < random_move_probability:
+            best_index = np.random.choice(4 * network.DROPPABLE_COLUMNS, BATCH_SIZE, True)
+
+        col, rot = np.unravel_index(best_index, (network.DROPPABLE_COLUMNS, 4))
+        col -= network.COLUMN_OFFSET
+
+        reward, lost = game.drop_in(col, rot)
+        cleared_lines = np.sum(reward)
+        reward = REWARD_MULTIPLIER * reward.astype(np.float64)
 
 
 def train(screen):
